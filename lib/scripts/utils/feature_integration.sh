@@ -45,11 +45,11 @@ setup_firebase_integration() {
         local ios_config="ios/Runner/GoogleService-Info.plist"
         mkdir -p "$(dirname "$ios_config")"
         
-        if curl -L -o "$ios_config" "$ios_config"; then
+        if curl -L -o "$ios_config" "$FIREBASE_CONFIG_IOS"; then
             log_success "iOS Firebase configuration downloaded"
         else
             log_error "Failed to download iOS Firebase configuration"
-            return 1
+            log_warning "Continuing without iOS Firebase config"
         fi
     else
         log_warning "No iOS Firebase configuration provided"

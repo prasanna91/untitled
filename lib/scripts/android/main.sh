@@ -202,6 +202,61 @@ EOF
     log_success "Build summary generated: $summary_file"
 }
 
+# Function to create missing Android resource files
+create_android_resources() {
+    log_step "Creating missing Android resource files"
+    
+    # Create values directory
+    local values_dir="android/app/src/main/res/values"
+    mkdir -p "$values_dir"
+    
+    # Create strings.xml if it doesn't exist
+    local strings_file="$values_dir/strings.xml"
+    if [[ ! -f "$strings_file" ]]; then
+        cat > "$strings_file" << EOF
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">${APP_NAME:-QuikApp}</string>
+    <string name="app_description">${APP_NAME:-QuikApp} - A powerful mobile application</string>
+</resources>
+EOF
+        log_success "Created strings.xml with app name: ${APP_NAME:-QuikApp}"
+    fi
+    
+    # Create colors.xml if it doesn't exist
+    local colors_file="$values_dir/colors.xml"
+    if [[ ! -f "$colors_file" ]]; then
+        cat > "$colors_file" << EOF
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="primary">#007AFF</color>
+    <color name="primary_dark">#0056CC</color>
+    <color name="accent">#FF6B35</color>
+    <color name="background">#FFFFFF</color>
+    <color name="text_primary">#000000</color>
+    <color name="text_secondary">#666666</color>
+</resources>
+EOF
+        log_success "Created colors.xml with default color scheme"
+    fi
+    
+    # Create styles.xml if it doesn't exist
+    local styles_file="$values_dir/styles.xml"
+    if [[ ! -f "$styles_file" ]]; then
+        cat > "$styles_file" << EOF
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorPrimaryDark">@color/primary_dark</item>
+        <item name="colorAccent">@color/accent</item>
+    </style>
+</resources>
+EOF
+        log_success "Created styles.xml with default theme"
+    fi
+}
+
 # Main build function
 main() {
     log_info "Starting Android build process"
@@ -226,6 +281,9 @@ main() {
     
     # Update app configuration
     update_app_config
+    
+    # Create missing Android resource files if they don't exist
+    create_android_resources
     
     # Clean previous builds
     clean_builds
