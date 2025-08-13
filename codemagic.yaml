@@ -405,6 +405,13 @@ workflows:
 #          echo "✅ Environment verification completed"
       - name: Build Android APK and AAB
         script: |
+          # Make scripts executable and run build
+          echo "🔧 Setting up build environment..."
+          chmod +x lib/scripts/android/*.sh
+          chmod +x lib/scripts/utils/*.sh
+          chmod +x lib/scripts/ios/*.sh
+          chmod +x lib/scripts/combined/*.sh
+          
           # Single build attempt - no retries
           echo "🏗️ Building Android APK and AAB (single attempt)"
           if ./lib/scripts/android/main.sh; then
