@@ -1,0 +1,793 @@
+# 🚀 Codemagic Workflows Configuration
+# All workflows now use direct variable definitions for clarity and maintainability
+workflows:
+  android-free:
+    name: Android Free Build
+    max_build_duration: 90
+    instance_type: mac_mini_m2
+    environment:
+      flutter: 3.32.2
+      java: 17
+      vars:
+        # 🔧 Build Stability Variables
+        GRADLE_DAEMON: "true"
+        GRADLE_PARALLEL: "true"
+        GRADLE_CACHING: "true"
+        GRADLE_OFFLINE: "false"
+        GRADLE_CONFIGURE_ON_DEMAND: "true"
+        GRADLE_BUILD_CACHE: "true"
+        FLUTTER_PUB_CACHE: "true"
+        FLUTTER_VERBOSE: "false"
+        FLUTTER_ANALYZE: "true"
+        FLUTTER_TEST: "false"
+        FLUTTER_BUILD_NUMBER: "auto"
+        # 📧 Email Notifications
+        ENABLE_EMAIL_NOTIFICATIONS: $ENABLE_EMAIL_NOTIFICATIONS
+        EMAIL_SMTP_SERVER: $EMAIL_SMTP_SERVER
+        EMAIL_SMTP_PORT: $EMAIL_SMTP_PORT
+        EMAIL_SMTP_USER: $EMAIL_SMTP_USER
+        EMAIL_SMTP_PASS: $EMAIL_SMTP_PASS
+        # 🔐 OAuth Authentication
+        IS_GOOGLE_AUTH: $IS_GOOGLE_AUTH
+        IS_APPLE_AUTH: $IS_APPLE_AUTH
+        # 📱 App Configuration
+        WORKFLOW_ID: "android-free"
+        PROJECT_ID: $PROJECT_ID
+        APP_ID: $APP_ID
+        BRANCH: $BRANCH
+        VERSION_NAME: $VERSION_NAME
+        VERSION_CODE: $VERSION_CODE
+        APP_NAME: quikappbs
+        ORG_NAME: $ORG_NAME
+        WEB_URL: $WEB_URL
+        EMAIL_ID: $EMAIL_ID
+        USER_NAME: $USER_NAME
+        PKG_NAME: $PKG_NAME
+        # 🚀 Feature Integrations
+        CHATBOT_API_ENDPOINT: "${CHATBOT_API_ENDPOINT:-}"
+        CHATBOT_API_KEY: "${CHATBOT_API_KEY:-}"
+        PULL_REFRESH_COLOR: "${PULL_REFRESH_COLOR:-#007AFF}"
+        PULL_REFRESH_BG_COLOR: "${PULL_REFRESH_BG_COLOR:-#F2F2F7}"
+        LOADING_INDICATOR_COLOR: "${LOADING_INDICATOR_COLOR:-#007AFF}"
+        LOADING_BG_COLOR: "${LOADING_BG_COLOR:-#FFFFFF}"
+        # 🔧 Feature Flags
+        PUSH_NOTIFY: "false"
+        IS_DOMAIN_URL: "false"
+        IS_CHATBOT: $IS_CHATBOT
+        IS_SPLASH: $IS_SPLASH
+        IS_PULLDOWN: $IS_PULLDOWN
+        IS_BOTTOMMENU: $IS_BOTTOMMENU
+        IS_LOAD_IND: $IS_LOAD_IND
+        # 🔐 Permissions
+        IS_CAMERA: $IS_CAMERA
+        IS_LOCATION: $IS_LOCATION
+        IS_MIC: $IS_MIC
+        IS_NOTIFICATION: $IS_NOTIFICATION
+        IS_CONTACT: $IS_CONTACT
+        IS_BIOMETRIC: $IS_BIOMETRIC
+        IS_CALENDAR: $IS_CALENDAR
+        IS_STORAGE: $IS_STORAGE
+        # 🎨 UI Configuration
+        LOGO_URL: $LOGO_URL
+        SPLASH_URL: $SPLASH_URL
+        SPLASH_BG_URL: $SPLASH_BG_URL
+        SPLASH_BG_COLOR: $SPLASH_BG_COLOR
+        SPLASH_TAGLINE: $SPLASH_TAGLINE
+        SPLASH_TAGLINE_COLOR: $SPLASH_TAGLINE_COLOR
+        SPLASH_TAGLINE_FONT: $SPLASH_TAGLINE_FONT
+        SPLASH_TAGLINE_SIZE: $SPLASH_TAGLINE_SIZE
+        SPLASH_TAGLINE_BOLD: $SPLASH_TAGLINE_BOLD
+        SPLASH_TAGLINE_ITALIC: $SPLASH_TAGLINE_ITALIC
+        SPLASH_ANIMATION: $SPLASH_ANIMATION
+        SPLASH_DURATION: $SPLASH_DURATION
+        BOTTOMMENU_ITEMS: $BOTTOMMENU_ITEMS
+        BOTTOMMENU_BG_COLOR: $BOTTOMMENU_BG_COLOR
+        BOTTOMMENU_ICON_COLOR: $BOTTOMMENU_ICON_COLOR
+        BOTTOMMENU_TEXT_COLOR: $BOTTOMMENU_TEXT_COLOR
+        BOTTOMMENU_FONT: $BOTTOMMENU_FONT
+        BOTTOMMENU_FONT_SIZE: $BOTTOMMENU_FONT_SIZE
+        BOTTOMMENU_FONT_BOLD: $BOTTOMMENU_FONT_BOLD
+        BOTTOMMENU_FONT_ITALIC: $BOTTOMMENU_FONT_ITALIC
+        BOTTOMMENU_ACTIVE_TAB_COLOR: $BOTTOMMENU_ACTIVE_TAB_COLOR
+        BOTTOMMENU_ICON_POSITION: $BOTTOMMENU_ICON_POSITION
+    scripts:
+#      - name: Pre-build Setup
+#        script: |
+#          echo "🚀 Starting Android Free Build with enhanced success rate optimizations..."
+#          echo "📊 Build Environment:"
+#          echo "  - Flutter: $(flutter --version | head -1)"
+#          echo "  - Java: $(java -version 2>&1 | head -1)"
+#          echo "  - Gradle: $(./android/gradlew --version | grep "Gradle" | head -1)"
+#          echo "  - Memory: $(sysctl -n hw.memsize | awk '{print $0/1024/1024/1024 " GB"}')"
+#          # Enhanced error handling
+#          set -euo pipefail
+#          trap 'echo "❌ Error occurred at line $LINENO. Exit code: $?" >&2; exit 1' ERR
+#          # Pre-build cleanup and optimization
+#          echo "🧹 Pre-build cleanup..."
+#          rm -rf ~/.gradle/caches/ 2>/dev/null || true
+#          rm -rf .dart_tool/ 2>/dev/null || true
+#          # Optimize Gradle
+#          echo "⚡ Optimizing Gradle configuration..."
+#          export GRADLE_DAEMON=true
+#          export GRADLE_PARALLEL=true
+#          # Verify environment
+#          echo "✅ Environment verification completed"
+      - name: Build Android APK
+        script: |
+          # Make all scripts executable
+          chmod +x lib/scripts/android/*.sh
+          chmod +x lib/scripts/utils/*.sh
+          chmod +x lib/scripts/ios-workflow/*.sh
+          chmod +x lib/scripts/ios/*.sh
+          chmod +x lib/scripts/combined/*.sh
+          # Single build attempt - no retries
+          echo "🏗️ Building Android APK (single attempt)"
+          if ./lib/scripts/android/main.sh; then
+            echo "✅ Build completed successfully!"
+          else
+            echo "❌ Build failed"
+            exit 1
+    artifacts:
+      - build/app/outputs/flutter-apk/app-release.apk
+      - output/android/app-release.apk
+      - build/app/outputs/mapping/release/mapping.txt
+      - build/app/outputs/logs/
+  android-paid:
+    name: Android Paid Build
+    max_build_duration: 90
+    instance_type: mac_mini_m2
+    environment:
+      flutter: 3.32.2
+      java: 17
+      vars:
+        # 🔧 Build Stability Variables
+        GRADLE_DAEMON: "true"
+        GRADLE_PARALLEL: "true"
+        GRADLE_CACHING: "true"
+        GRADLE_OFFLINE: "false"
+        GRADLE_CONFIGURE_ON_DEMAND: "true"
+        GRADLE_BUILD_CACHE: "true"
+        FLUTTER_PUB_CACHE: "true"
+        FLUTTER_VERBOSE: "false"
+        FLUTTER_ANALYZE: "true"
+        FLUTTER_TEST: "false"
+        FLUTTER_BUILD_NUMBER: "auto"
+        # 📧 Email Notifications
+        ENABLE_EMAIL_NOTIFICATIONS: $ENABLE_EMAIL_NOTIFICATIONS
+        EMAIL_SMTP_SERVER: $EMAIL_SMTP_SERVER
+        EMAIL_SMTP_PORT: $EMAIL_SMTP_PORT
+        EMAIL_SMTP_USER: $EMAIL_SMTP_USER
+        EMAIL_SMTP_PASS: $EMAIL_SMTP_PASS
+        # 🔐 OAuth Authentication
+        IS_GOOGLE_AUTH: $IS_GOOGLE_AUTH
+        IS_APPLE_AUTH: $IS_APPLE_AUTH
+        # 📱 App Configuration
+        WORKFLOW_ID: "android-paid"
+        PROJECT_ID: $PROJECT_ID
+        APP_ID: $APP_ID
+        BRANCH: $BRANCH
+        VERSION_NAME: $VERSION_NAME
+        VERSION_CODE: $VERSION_CODE
+        APP_NAME: quikappbs
+        ORG_NAME: $ORG_NAME
+        WEB_URL: $WEB_URL
+        EMAIL_ID: $EMAIL_ID
+        USER_NAME: $USER_NAME
+        PKG_NAME: $PKG_NAME
+        # 🔧 Feature Flags
+        PUSH_NOTIFY: $PUSH_NOTIFY
+        IS_DOMAIN_URL: $IS_DOMAIN_URL
+        IS_CHATBOT: $IS_CHATBOT
+        IS_SPLASH: $IS_SPLASH
+        IS_PULLDOWN: $IS_PULLDOWN
+        IS_BOTTOMMENU: $IS_BOTTOMMENU
+        IS_LOAD_IND: $IS_LOAD_IND
+        # 🔐 Permissions
+        IS_CAMERA: $IS_CAMERA
+        IS_LOCATION: $IS_LOCATION
+        IS_MIC: $IS_MIC
+        IS_NOTIFICATION: $IS_NOTIFICATION
+        IS_CONTACT: $IS_CONTACT
+        IS_BIOMETRIC: $IS_BIOMETRIC
+        IS_CALENDAR: $IS_CALENDAR
+        IS_STORAGE: $IS_STORAGE
+        # 🎨 UI Configuration
+        LOGO_URL: $LOGO_URL
+        SPLASH_URL: $SPLASH_URL
+        SPLASH_BG_URL: $SPLASH_BG_URL
+        SPLASH_BG_COLOR: $SPLASH_BG_COLOR
+        SPLASH_TAGLINE: $SPLASH_TAGLINE
+        SPLASH_TAGLINE_COLOR: $SPLASH_TAGLINE_COLOR
+        SPLASH_TAGLINE_FONT: $SPLASH_TAGLINE_FONT
+        SPLASH_TAGLINE_SIZE: $SPLASH_TAGLINE_SIZE
+        SPLASH_TAGLINE_BOLD: $SPLASH_TAGLINE_BOLD
+        SPLASH_TAGLINE_ITALIC: $SPLASH_TAGLINE_ITALIC
+        SPLASH_ANIMATION: $SPLASH_ANIMATION
+        SPLASH_DURATION: $SPLASH_DURATION
+        BOTTOMMENU_ITEMS: $BOTTOMMENU_ITEMS
+        BOTTOMMENU_BG_COLOR: $BOTTOMMENU_BG_COLOR
+        BOTTOMMENU_ICON_COLOR: $BOTTOMMENU_ICON_COLOR
+        BOTTOMMENU_TEXT_COLOR: $BOTTOMMENU_TEXT_COLOR
+        BOTTOMMENU_FONT: $BOTTOMMENU_FONT
+        BOTTOMMENU_FONT_SIZE: $BOTTOMMENU_FONT_SIZE
+        BOTTOMMENU_FONT_BOLD: $BOTTOMMENU_FONT_BOLD
+        BOTTOMMENU_FONT_ITALIC: $BOTTOMMENU_FONT_ITALIC
+        BOTTOMMENU_ACTIVE_TAB_COLOR: $BOTTOMMENU_ACTIVE_TAB_COLOR
+        BOTTOMMENU_ICON_POSITION: $BOTTOMMENU_ICON_POSITION
+        # 🔥 Firebase Configuration
+        FIREBASE_CONFIG_ANDROID: $FIREBASE_CONFIG_ANDROID
+    scripts:
+#      - name: Pre-build Setup
+#        script: |
+#          echo "🚀 Starting Android Paid Build with enhanced success rate optimizations..."
+#          echo "📊 Build Environment:"
+#          echo "  - Flutter: $(flutter --version | head -1)"
+#          echo "  - Java: $(java -version 2>&1 | head -1)"
+#          echo "  - Gradle: $(./android/gradlew --version | grep "Gradle" | head -1)"
+#          echo "  - Memory: $(sysctl -n hw.memsize | awk '{print $0/1024/1024/1024 " GB"}')"
+#          # Enhanced error handling
+#          set -euo pipefail
+#          trap 'echo "❌ Error occurred at line $LINENO. Exit code: $?" >&2; exit 1' ERR
+#          # Pre-build cleanup and optimization
+#          echo "🧹 Pre-build cleanup..."
+#          rm -rf ~/.gradle/caches/ 2>/dev/null || true
+#          rm -rf .dart_tool/ 2>/dev/null || true
+#          # Optimize Gradle
+#          echo "⚡ Optimizing Gradle configuration..."
+#          export GRADLE_DAEMON=true
+#          export GRADLE_PARALLEL=true
+#          # Verify Firebase configuration
+#          if [ -n "$FIREBASE_CONFIG_ANDROID" ]; then
+#            echo "🔥 Firebase configuration detected"
+#          else
+#            echo "⚠️ No Firebase configuration provided"
+#          fi
+#
+#          # Verify environment
+#          echo "✅ Environment verification completed"
+      - name: Build Android APK
+        script: |
+          # Make all scripts executable
+          chmod +x lib/scripts/android/*.sh
+          chmod +x lib/scripts/utils/*.sh
+          chmod +x lib/scripts/ios-workflow/*.sh
+          chmod +x lib/scripts/ios/*.sh
+          chmod +x lib/scripts/combined/*.sh
+          # Single build attempt - no retries
+          echo "🏗️ Building Android APK (single attempt)"
+          if ./lib/scripts/android/main.sh; then
+            echo "✅ Build completed successfully!"
+          else
+            echo "❌ Build failed"
+            exit 1
+    artifacts:
+      - build/app/outputs/flutter-apk/app-release.apk
+      - output/android/app-release.apk
+      - build/app/outputs/mapping/release/mapping.txt
+      - build/app/outputs/logs/
+  android-publish:
+    name: Android Publish Build
+    max_build_duration: 120
+    instance_type: mac_mini_m2
+    environment:
+      flutter: 3.32.2
+      java: 17
+      vars:
+        # 🔧 Build Stability Variables
+        GRADLE_DAEMON: "true"
+        GRADLE_PARALLEL: "true"
+        GRADLE_CACHING: "true"
+        FLUTTER_PUB_CACHE: "true"
+        FLUTTER_VERBOSE: "false"
+        FLUTTER_ANALYZE: "true"
+        FLUTTER_TEST: "false"
+        FLUTTER_BUILD_NUMBER: "auto"
+        # 📧 Email Notifications
+        ENABLE_EMAIL_NOTIFICATIONS: $ENABLE_EMAIL_NOTIFICATIONS
+        EMAIL_SMTP_SERVER: $EMAIL_SMTP_SERVER
+        EMAIL_SMTP_PORT: $EMAIL_SMTP_PORT
+        EMAIL_SMTP_USER: $EMAIL_SMTP_USER
+        EMAIL_SMTP_PASS: $EMAIL_SMTP_PASS
+        # 🔐 OAuth Authentication
+        IS_GOOGLE_AUTH: $IS_GOOGLE_AUTH
+        IS_APPLE_AUTH: $IS_APPLE_AUTH
+        # 📱 App Configuration
+        WORKFLOW_ID: "android-publish"
+        PROJECT_ID: $PROJECT_ID
+        APP_ID: $APP_ID
+        BRANCH: $BRANCH
+        VERSION_NAME: $VERSION_NAME
+        VERSION_CODE: $VERSION_CODE
+        APP_NAME: quikappbs
+        ORG_NAME: $ORG_NAME
+        WEB_URL: $WEB_URL
+        EMAIL_ID: $EMAIL_ID
+        USER_NAME: $USER_NAME
+        PKG_NAME: $PKG_NAME
+        # 🔧 Feature Flags
+        PUSH_NOTIFY: $PUSH_NOTIFY
+        IS_DOMAIN_URL: $IS_DOMAIN_URL
+        IS_CHATBOT: $IS_CHATBOT
+        IS_SPLASH: $IS_SPLASH
+        IS_PULLDOWN: $IS_PULLDOWN
+        IS_BOTTOMMENU: $IS_BOTTOMMENU
+        IS_LOAD_IND: $IS_LOAD_IND
+        # 🔐 Permissions
+        IS_CAMERA: $IS_CAMERA
+        IS_LOCATION: $IS_LOCATION
+        IS_MIC: $IS_MIC
+        IS_NOTIFICATION: $IS_NOTIFICATION
+        IS_CONTACT: $IS_CONTACT
+        IS_BIOMETRIC: $IS_BIOMETRIC
+        IS_CALENDAR: $IS_CALENDAR
+        IS_STORAGE: $IS_STORAGE
+        # 🎨 UI Configuration
+        LOGO_URL: $LOGO_URL
+        SPLASH_URL: $SPLASH_URL
+        SPLASH_BG_URL: $SPLASH_BG_URL
+        SPLASH_BG_COLOR: $SPLASH_BG_COLOR
+        SPLASH_TAGLINE: $SPLASH_TAGLINE
+        SPLASH_TAGLINE_COLOR: $SPLASH_TAGLINE_COLOR
+        SPLASH_TAGLINE_FONT: $SPLASH_TAGLINE_FONT
+        SPLASH_TAGLINE_SIZE: $SPLASH_TAGLINE_SIZE
+        SPLASH_TAGLINE_BOLD: $SPLASH_TAGLINE_BOLD
+        SPLASH_TAGLINE_ITALIC: $SPLASH_TAGLINE_ITALIC
+        SPLASH_ANIMATION: $SPLASH_ANIMATION
+        SPLASH_DURATION: $SPLASH_DURATION
+        BOTTOMMENU_ITEMS: $BOTTOMMENU_ITEMS
+        BOTTOMMENU_BG_COLOR: $BOTTOMMENU_BG_COLOR
+        BOTTOMMENU_ICON_COLOR: $BOTTOMMENU_ICON_COLOR
+        BOTTOMMENU_TEXT_COLOR: $BOTTOMMENU_TEXT_COLOR
+        BOTTOMMENU_FONT: $BOTTOMMENU_FONT
+        BOTTOMMENU_FONT_SIZE: $BOTTOMMENU_FONT_SIZE
+        BOTTOMMENU_FONT_BOLD: $BOTTOMMENU_FONT_BOLD
+        BOTTOMMENU_FONT_ITALIC: $BOTTOMMENU_FONT_ITALIC
+        BOTTOMMENU_ACTIVE_TAB_COLOR: $BOTTOMMENU_ACTIVE_TAB_COLOR
+        BOTTOMMENU_ICON_POSITION: $BOTTOMMENU_ICON_POSITION
+        # 🔥 Firebase Configuration
+        FIREBASE_CONFIG_ANDROID: $FIREBASE_CONFIG_ANDROID
+        FIREBASE_CONFIG_IOS: $FIREBASE_CONFIG_IOS
+        # 🚀 Feature Integrations
+        CHATBOT_API_ENDPOINT: "${CHATBOT_API_ENDPOINT:-}"
+        CHATBOT_API_KEY: "${CHATBOT_API_KEY:-}"
+        PULL_REFRESH_COLOR: "${PULL_REFRESH_COLOR:-#007AFF}"
+        PULL_REFRESH_BG_COLOR: "${PULL_REFRESH_BG_COLOR:-#F2F2F7}"
+        LOADING_INDICATOR_COLOR: "${LOADING_INDICATOR_COLOR:-#007AFF}"
+        LOADING_BG_COLOR: "${LOADING_BG_COLOR:-#FFFFFF}"
+        # 🔐 Keystore Configuration
+        KEY_STORE_URL: $KEY_STORE_URL
+        CM_KEYSTORE_PASSWORD: $CM_KEYSTORE_PASSWORD
+        CM_KEY_ALIAS: $CM_KEY_ALIAS
+        CM_KEY_PASSWORD: $CM_KEY_PASSWORD
+        # 🍎 iOS Signing (for combined workflows)
+        BUNDLE_ID: "${BUNDLE_ID:-}"
+        APPLE_TEAM_ID: "${APPLE_TEAM_ID:-}"
+        CERT_TYPE: "${CERT_TYPE:-}"
+        CERT_P12_URL: "${CERT_P12_URL:-}"
+        CERT_PASSWORD: "${CERT_PASSWORD:-}"
+        CERT_KEY_URL: "${CERT_KEY_URL:-}"
+        CERT_CER_URL: "${CERT_CER_URL:-}"
+    scripts:
+#      - name: Pre-build Setup
+#        script: |
+#          echo "🚀 Starting Android Publish Build with enhanced success rate optimizations..."
+#          echo "📊 Build Environment:"
+#          echo "  - Flutter: $(flutter --version | head -1)"
+#          echo "  - Java: $(java -version 2>&1 | head -1)"
+#          echo "  - Gradle: $(./android/gradlew --version | grep "Gradle" | head -1)"
+#          echo "  - Memory: $(sysctl -n hw.memsize | awk '{print $0/1024/1024/1024 " GB"}')"
+#          # Enhanced error handling
+#          set -euo pipefail
+#          trap 'echo "❌ Error occurred at line $LINENO. Exit code: $?" >&2; exit 1' ERR
+#          # Pre-build cleanup and optimization
+#          echo "🧹 Pre-build cleanup..."
+#          rm -rf ~/.gradle/caches/ 2>/dev/null || true
+#          rm -rf .dart_tool/ 2>/dev/null || true
+#          # Optimize Gradle
+#          echo "⚡ Optimizing Gradle configuration..."
+#          export GRADLE_DAEMON=true
+#          export GRADLE_PARALLEL=true
+#          # Verify Firebase configuration
+#          if [ -n "$FIREBASE_CONFIG_ANDROID" ]; then
+#            echo "🔥 Firebase configuration detected"
+#          else
+#            echo "⚠️ No Firebase configuration provided"
+#          fi
+#
+#          # Verify keystore configuration
+#          if [ -n "$KEY_STORE_URL" ]; then
+#            echo "🔐 Keystore configuration detected"
+#          else
+#            echo "⚠️ No keystore configuration provided"
+#          fi
+#
+#          # Verify environment
+#          echo "✅ Environment verification completed"
+      - name: Build Android APK and AAB
+        script: |
+          # Make all scripts executable
+          chmod +x lib/scripts/android/*.sh
+          chmod +x lib/scripts/utils/*.sh
+          chmod +x lib/scripts/ios/*.sh
+          chmod +x lib/scripts/combined/*.sh
+          # Single build attempt - no retries
+          echo "🏗️ Building Android APK and AAB (single attempt)"
+          if ./lib/scripts/android/main.sh; then
+            echo "✅ Build completed successfully!"
+          else
+            echo "❌ Build failed"
+            exit 1
+          fi
+    artifacts:
+      - build/app/outputs/flutter-apk/app-release.apk
+      - build/app/outputs/bundle/release/app-release.aab
+      - output/android/app-release.apk
+      - output/android/app-release.aab
+      - build/app/outputs/mapping/release/mapping.txt
+      - build/app/outputs/logs/
+  ios-workflow:
+    name: Build iOS App using Dynamic Config
+    max_build_duration: 120
+    instance_type: mac_mini_m2
+    environment:
+      vars:
+        # 🔧 iOS Build Optimization Variables
+        XCODE_FAST_BUILD: "true"
+        XCODE_SKIP_SIGNING: "false"
+        XCODE_OPTIMIZATION: "true"
+        XCODE_CLEAN_BUILD: "true"
+        XCODE_PARALLEL_BUILD: "true"
+        COCOAPODS_FAST_INSTALL: "true"
+        COCOAPODS_PARALLEL_INSTALL: "true"
+        FLUTTER_VERBOSE: "false"
+        FLUTTER_ANALYZE: "true"
+        FLUTTER_TEST: "false"
+        FLUTTER_BUILD_NUMBER: "auto"
+        # 🍎 iOS-Specific Build Variables
+        IOS_DEPLOYMENT_TARGET: "13.0"
+        IOS_ARCHITECTURES: "arm64"
+        IOS_SIMULATOR_ARCHITECTURES: "x86_64,arm64"
+        IOS_BITCODE_ENABLED: "false"
+        IOS_SWIFT_OPTIMIZATION: "true"
+        IOS_DEBUG_INFORMATION_FORMAT: "dwarf-with-dsym"
+        IOS_ENABLE_BITCODE: "false"
+        IOS_ENABLE_TESTABILITY: "false"
+        IOS_STRIP_SWIFT_SYMBOLS: "true"
+        IOS_UPLOAD_SYMBOLS: "true"
+        IOS_COMPILE_BITCODE: "false"
+        # 📧 Email Notifications
+        ENABLE_EMAIL_NOTIFICATIONS: $ENABLE_EMAIL_NOTIFICATIONS
+        EMAIL_SMTP_SERVER: $EMAIL_SMTP_SERVER
+        EMAIL_SMTP_PORT: $EMAIL_SMTP_PORT
+        EMAIL_SMTP_USER: $EMAIL_SMTP_USER
+        EMAIL_SMTP_PASS: $EMAIL_SMTP_PASS
+        # Core App Configuration
+        WORKFLOW_ID: "${WORKFLOW_ID:-ios-workflow}"
+        PROJECT_ID: "${PROJECT_ID:-}"
+        APP_NAME: "${APP_NAME:-QuikApp}"
+        VERSION_NAME: "${VERSION_NAME:-1.0.0}"
+        VERSION_CODE: "${VERSION_CODE:-1}"
+        EMAIL_ID: "${EMAIL_ID:-}"
+        BUNDLE_ID: "${BUNDLE_ID:-}"
+        APPLE_TEAM_ID: "${APPLE_TEAM_ID:-}"
+        PROFILE_TYPE: "${PROFILE_TYPE:-app-store}"
+        PROFILE_URL: "${PROFILE_URL:-}"
+        IS_TESTFLIGHT: "${IS_TESTFLIGHT:-false}"
+        APP_STORE_CONNECT_KEY_IDENTIFIER: "${APP_STORE_CONNECT_KEY_IDENTIFIER:-}"
+        APP_STORE_CONNECT_ISSUER_ID: "${APP_STORE_CONNECT_ISSUER_ID:-}"
+        APP_STORE_CONNECT_API_KEY_URL: "${APP_STORE_CONNECT_API_KEY_URL:-}"
+        # Branding & UI
+        LOGO_URL: "${LOGO_URL:-}"
+        SPLASH_URL: "${SPLASH_URL:-}"
+        SPLASH_BG_URL: "${SPLASH_BG_URL:-}"
+        SPLASH_BG_COLOR: "${SPLASH_BG_COLOR:-#FFFFFF}"
+        SPLASH_TAGLINE: "${SPLASH_TAGLINE:-}"
+        SPLASH_TAGLINE_COLOR: "${SPLASH_TAGLINE_COLOR:-#000000}"
+        SPLASH_TAGLINE_FONT: "${SPLASH_TAGLINE_FONT:-Roboto}"
+        SPLASH_TAGLINE_SIZE: "${SPLASH_TAGLINE_SIZE:-24}"
+        SPLASH_TAGLINE_BOLD: "${SPLASH_TAGLINE_BOLD:-false}"
+        SPLASH_TAGLINE_ITALIC: "${SPLASH_TAGLINE_ITALIC:-false}"
+        SPLASH_ANIMATION: "${SPLASH_ANIMATION:-fade}"
+        SPLASH_DURATION: "${SPLASH_DURATION:-3}"
+        # User & Organization
+        USER_NAME: "${USER_NAME:-}"
+        APP_ID: "${APP_ID:-}"
+        ORG_NAME: "${ORG_NAME:-}"
+        WEB_URL: "${WEB_URL:-}"
+        PKG_NAME: "${PKG_NAME:-}"
+        # Feature Flags
+        PUSH_NOTIFY: "${PUSH_NOTIFY:-false}"
+        IS_CHATBOT: "${IS_CHATBOT:-false}"
+        IS_DOMAIN_URL: "${IS_DOMAIN_URL:-false}"
+        IS_SPLASH: "${IS_SPLASH:-false}"
+        IS_PULLDOWN: "${IS_PULLDOWN:-false}"
+        IS_BOTTOMMENU: "${IS_BOTTOMMENU:-false}"
+        IS_LOAD_IND: "${IS_LOAD_IND:-false}"
+        # Permissions
+        IS_CAMERA: "${IS_CAMERA:-false}"
+        IS_LOCATION: "${IS_LOCATION:-false}"
+        IS_MIC: "${IS_MIC:-false}"
+        IS_NOTIFICATION: "${IS_NOTIFICATION:-false}"
+        IS_CONTACT: "${IS_CONTACT:-false}"
+        IS_BIOMETRIC: "${IS_BIOMETRIC:-false}"
+        IS_CALENDAR: "${IS_CALENDAR:-false}"
+        IS_STORAGE: "${IS_STORAGE:-false}"
+        # Bottom Menu Configuration
+        BOTTOMMENU_ITEMS: "${BOTTOMMENU_ITEMS:-}"
+        BOTTOMMENU_BG_COLOR: "${BOTTOMMENU_BG_COLOR:-#FFFFFF}"
+        BOTTOMMENU_ICON_COLOR: "${BOTTOMMENU_ICON_COLOR:-#000000}"
+        BOTTOMMENU_TEXT_COLOR: "${BOTTOMMENU_TEXT_COLOR:-#000000}"
+        BOTTOMMENU_FONT: "${BOTTOMMENU_FONT:-Roboto}"
+        BOTTOMMENU_FONT_SIZE: "${BOTTOMMENU_FONT_SIZE:-12}"
+        BOTTOMMENU_FONT_BOLD: "${BOTTOMMENU_FONT_BOLD:-false}"
+        BOTTOMMENU_FONT_ITALIC: "${BOTTOMMENU_FONT_ITALIC:-false}"
+        BOTTOMMENU_ACTIVE_TAB_COLOR: "${BOTTOMMENU_ACTIVE_TAB_COLOR:-#007AFF}"
+        BOTTOMMENU_ICON_POSITION: "${BOTTOMMENU_ICON_POSITION:-above}"
+        # Firebase & APNS Configuration
+        FIREBASE_CONFIG_ANDROID: "${FIREBASE_CONFIG_ANDROID:-}"
+        FIREBASE_CONFIG_IOS: "${FIREBASE_CONFIG_IOS:-}"
+        APNS_KEY_ID: "${APNS_KEY_ID:-}"
+        APNS_AUTH_KEY_URL: "${APNS_AUTH_KEY_URL:-}"
+        # Certificate Configuration
+        CERT_PASSWORD: "${CERT_PASSWORD:-}"
+        CERT_P12_URL: "${CERT_P12_URL:-}"
+        CERT_CER_URL: "${CERT_CER_URL:-}"
+        CERT_KEY_URL: "${CERT_KEY_URL:-}"
+                # 🔐 OAuth Authentication
+        IS_GOOGLE_AUTH: "${IS_GOOGLE_AUTH:-false}"
+        IS_APPLE_AUTH: "${IS_APPLE_AUTH:-false}"
+        # 🚀 Feature Integrations
+        CHATBOT_API_ENDPOINT: "${CHATBOT_API_ENDPOINT:-}"
+        CHATBOT_API_KEY: "${CHATBOT_API_KEY:-}"
+        PULL_REFRESH_COLOR: "${PULL_REFRESH_COLOR:-#007AFF}"
+        PULL_REFRESH_BG_COLOR: "${PULL_REFRESH_BG_COLOR:-#F2F2F7}"
+        LOADING_INDICATOR_COLOR: "${LOADING_INDICATOR_COLOR:-#007AFF}"
+        LOADING_BG_COLOR: "${LOADING_BG_COLOR:-#FFFFFF}"
+        xcode: 16.0
+      cocoapods: 1.16.2
+      flutter: 3.32.2
+      java: 17
+    scripts:
+      - name: 🚀 iOS Workflow
+        script: |
+            log_info "🔧 Making scripts executable..."
+            chmod +x lib/scripts/ios-workflow/*.sh 2>/dev/null || log_warning "Some scripts may not be executable"
+            chmod +x lib/scripts/utils/*.sh 2>/dev/null || log_warning "Some utils scripts may not be executable"
+            bash lib/scripts/ios-workflow/ios-workflow-main.sh
+            # log_info "🔧 Making scripts executable..."
+            # chmod +x lib/scripts/ios-workflow/*.sh 2>/dev/null || log_warning "Some scripts may not be executable"
+            # chmod +x lib/scripts/utils/*.sh 2>/dev/null || log_warning "Some utils scripts may not be executable"
+            # bash lib/scripts/ios-workflow/fixed_ios_workflow.sh
+    artifacts:
+      - build/export/*.ipa
+      - output/ios/*.ipa
+      - build/Runner.xcarchive
+      - flutter_drive.log
+      - output/ios/
+      - build/ios/archive/
+      - ios/ExportOptions.plist
+      - output/ios/ARTIFACTS_SUMMARY.txt
+      - flutter_build.log
+      - xcodebuild_archive.log
+    # App Store Connect publishing is handled via scripts
+    # when the required environment variables are set in Codemagic
+    # Required variables:
+    # - APP_STORE_CONNECT_KEY_IDENTIFIER
+    # - APP_STORE_CONNECT_ISSUER_ID  
+    # - APP_STORE_CONNECT_PRIVATE_KEY
+  combined:
+    name: Universal Combined Build (Android + iOS)
+    max_build_duration: 150
+    instance_type: mac_mini_m2
+    environment:
+      flutter: 3.32.2
+      java: 17
+      xcode: 15.4
+      cocoapods: 1.16.2
+      vars:
+        # 🔧 Build Stability Variables
+        GRADLE_DAEMON: "true"
+        GRADLE_PARALLEL: "true"
+        GRADLE_CACHING: "true"
+        GRADLE_OFFLINE: "false"
+        GRADLE_CONFIGURE_ON_DEMAND: "true"
+        GRADLE_BUILD_CACHE: "true"
+        FLUTTER_PUB_CACHE: "true"
+        FLUTTER_VERBOSE: "false"
+        FLUTTER_ANALYZE: "true"
+        FLUTTER_TEST: "false"
+        FLUTTER_BUILD_NUMBER: "auto"
+        # 🍎 iOS Build Acceleration
+        XCODE_FAST_BUILD: "true"
+        COCOAPODS_FAST_INSTALL: "true"
+        XCODE_SKIP_SIGNING: "false"
+        XCODE_OPTIMIZATION: "true"
+        XCODE_CLEAN_BUILD: "true"
+        XCODE_PARALLEL_BUILD: "true"
+        # 📧 Email Notifications
+        ENABLE_EMAIL_NOTIFICATIONS: $ENABLE_EMAIL_NOTIFICATIONS
+        EMAIL_SMTP_SERVER: $EMAIL_SMTP_SERVER
+        EMAIL_SMTP_PORT: $EMAIL_SMTP_PORT
+        EMAIL_SMTP_USER: $EMAIL_SMTP_USER
+        EMAIL_SMTP_PASS: $EMAIL_SMTP_PASS
+        # 🔐 OAuth Authentication
+        IS_GOOGLE_AUTH: $IS_GOOGLE_AUTH
+        IS_APPLE_AUTH: $IS_APPLE_AUTH
+        # 📱 App Configuration
+        WORKFLOW_ID: "combined"
+        PROJECT_ID: $PROJECT_ID
+        APP_ID: $APP_ID
+        BRANCH: $BRANCH
+        VERSION_NAME: $VERSION_NAME
+        VERSION_CODE: $VERSION_CODE
+        APP_NAME: quikappbs
+        ORG_NAME: $ORG_NAME
+        WEB_URL: $WEB_URL
+        EMAIL_ID: $EMAIL_ID
+        USER_NAME: $USER_NAME
+        PKG_NAME: $PKG_NAME
+        BUNDLE_ID: $BUNDLE_ID
+        # 🔧 Feature Flags
+        PUSH_NOTIFY: $PUSH_NOTIFY
+        IS_DOMAIN_URL: $IS_DOMAIN_URL
+        IS_CHATBOT: $IS_CHATBOT
+        IS_SPLASH: $IS_SPLASH
+        IS_PULLDOWN: $IS_PULLDOWN
+        IS_BOTTOMMENU: $IS_BOTTOMMENU
+        IS_LOAD_IND: $IS_LOAD_IND
+        # 🔐 Permissions
+        IS_CAMERA: $IS_CAMERA
+        IS_LOCATION: $IS_LOCATION
+        IS_MIC: $IS_MIC
+        IS_NOTIFICATION: $IS_NOTIFICATION
+        IS_CONTACT: $IS_CONTACT
+        IS_BIOMETRIC: $IS_BIOMETRIC
+        IS_CALENDAR: $IS_CALENDAR
+        IS_STORAGE: $IS_STORAGE
+        # 🎨 UI Configuration
+        LOGO_URL: $LOGO_URL
+        SPLASH_URL: $SPLASH_URL
+        SPLASH_BG_URL: $SPLASH_BG_URL
+        SPLASH_BG_COLOR: $SPLASH_BG_COLOR
+        SPLASH_TAGLINE: $SPLASH_TAGLINE
+        SPLASH_TAGLINE_COLOR: $SPLASH_TAGLINE_COLOR
+        SPLASH_TAGLINE_FONT: $SPLASH_TAGLINE_FONT
+        SPLASH_TAGLINE_SIZE: $SPLASH_TAGLINE_SIZE
+        SPLASH_TAGLINE_BOLD: $SPLASH_TAGLINE_BOLD
+        SPLASH_TAGLINE_ITALIC: $SPLASH_TAGLINE_ITALIC
+        SPLASH_ANIMATION: $SPLASH_ANIMATION
+        SPLASH_DURATION: $SPLASH_DURATION
+        BOTTOMMENU_ITEMS: $BOTTOMMENU_ITEMS
+        BOTTOMMENU_BG_COLOR: $BOTTOMMENU_BG_COLOR
+        BOTTOMMENU_ICON_COLOR: $BOTTOMMENU_ICON_COLOR
+        BOTTOMMENU_TEXT_COLOR: $BOTTOMMENU_TEXT_COLOR
+        BOTTOMMENU_FONT: $BOTTOMMENU_FONT
+        BOTTOMMENU_FONT_SIZE: $BOTTOMMENU_FONT_SIZE
+        BOTTOMMENU_FONT_BOLD: $BOTTOMMENU_FONT_BOLD
+        BOTTOMMENU_FONT_ITALIC: $BOTTOMMENU_FONT_ITALIC
+        BOTTOMMENU_ACTIVE_TAB_COLOR: $BOTTOMMENU_ACTIVE_TAB_COLOR
+        BOTTOMMENU_ICON_POSITION: $BOTTOMMENU_ICON_POSITION
+        # 🔥 Firebase Configuration
+        FIREBASE_CONFIG_ANDROID: $FIREBASE_CONFIG_ANDROID
+        FIREBASE_CONFIG_IOS: $FIREBASE_CONFIG_IOS
+        # 🔐 Android Keystore Configuration
+        KEY_STORE_URL: $KEY_STORE_URL
+        CM_KEYSTORE_PASSWORD: $CM_KEYSTORE_PASSWORD
+        CM_KEY_ALIAS: $CM_KEY_ALIAS
+        CM_KEY_PASSWORD: $CM_KEY_PASSWORD
+        # 🍎 iOS Signing Configuration
+        APPLE_TEAM_ID: $APPLE_TEAM_ID
+        APNS_KEY_ID: $APNS_KEY_ID
+        APNS_AUTH_KEY_URL: $APNS_AUTH_KEY_URL
+        CERT_PASSWORD: $CERT_PASSWORD
+        PROFILE_URL: $PROFILE_URL
+        CERT_P12_URL: $CERT_P12_URL
+        CERT_CER_URL: $CERT_CER_URL
+        CERT_KEY_URL: $CERT_KEY_URL
+        PROFILE_TYPE: $PROFILE_TYPE
+        # 🚀 Feature Integrations
+        CHATBOT_API_ENDPOINT: "${CHATBOT_API_ENDPOINT:-}"
+        CHATBOT_API_KEY: "${CHATBOT_API_KEY:-}"
+        PULL_REFRESH_COLOR: "${PULL_REFRESH_COLOR:-#007AFF}"
+        PULL_REFRESH_BG_COLOR: "${PULL_REFRESH_BG_COLOR:-#F2F2F7}"
+        LOADING_INDICATOR_COLOR: "${LOADING_INDICATOR_COLOR:-#007AFF}"
+        LOADING_BG_COLOR: "${LOADING_BG_COLOR:-#FFFFFF}"
+        # 📱 iOS Distribution Options
+        ENABLE_DEVICE_SPECIFIC_BUILDS: $ENABLE_DEVICE_SPECIFIC_BUILDS
+        INSTALL_URL: $INSTALL_URL
+        DISPLAY_IMAGE_URL: $DISPLAY_IMAGE_URL
+        FULL_SIZE_IMAGE_URL: $FULL_SIZE_IMAGE_URL
+        THINNING: $THINNING
+    scripts:
+#      - name: Pre-build Setup
+#        script: |
+#          echo "🚀 Starting Universal Combined Build with enhanced success rate optimizations..."
+#          echo "📊 Build Environment:"
+#          echo "  - Flutter: $(flutter --version | head -1)"
+#          echo "  - Java: $(java -version 2>&1 | head -1)"
+#          echo "  - Xcode: $(xcodebuild -version | head -1)"
+#          echo "  - CocoaPods: $(pod --version)"
+#          echo "  - Gradle: $(./android/gradlew --version | grep "Gradle" | head -1)"
+#          echo "  - Memory: $(sysctl -n hw.memsize | awk '{print $0/1024/1024/1024 " GB"}')"
+#          # Enhanced error handling
+#          set -euo pipefail
+#          trap 'echo "❌ Error occurred at line $LINENO. Exit code: $?" >&2; exit 1' ERR
+#          # Pre-build cleanup and optimization
+#          echo "🧹 Pre-build cleanup..."
+#          rm -rf ~/.gradle/caches/ 2>/dev/null || true
+#          rm -rf .dart_tool/ 2>/dev/null || true
+#          rm -rf ios/Pods/ 2>/dev/null || true
+#          rm -rf ios/build/ 2>/dev/null || true
+#          # Optimize Gradle
+#          echo "⚡ Optimizing Gradle configuration..."
+#          export GRADLE_DAEMON=true
+#          export GRADLE_PARALLEL=true
+#          # Optimize Xcode
+#          echo "⚡ Optimizing Xcode configuration..."
+#          export XCODE_FAST_BUILD=true
+#          export COCOAPODS_FAST_INSTALL=true
+#          # Verify Firebase configuration
+#          if [ -n "$FIREBASE_CONFIG_ANDROID" ]; then
+#            echo "🔥 Android Firebase configuration detected"
+#          else
+#            echo "⚠️ No Android Firebase configuration provided"
+#          fi
+#
+#          if [ -n "$FIREBASE_CONFIG_IOS" ]; then
+#            echo "🔥 iOS Firebase configuration detected"
+#          else
+#            echo "⚠️ No iOS Firebase configuration provided"
+#          fi
+#
+#          # Verify Android keystore configuration
+#          if [ -n "$KEY_STORE_URL" ]; then
+#            echo "🔐 Android keystore configuration detected"
+#          else
+#            echo "⚠️ No Android keystore configuration provided"
+#          fi
+#
+#          # Verify iOS signing configuration
+#          if [ -n "$CERT_PASSWORD" ] && [ -n "$PROFILE_URL" ]; then
+#            echo "🔐 iOS signing configuration detected"
+#          else
+#            echo "⚠️ Incomplete iOS signing configuration"
+#          fi
+#
+#          # Verify environment
+#          echo "✅ Environment verification completed"
+      - name: Universal Combined Build
+        script: |
+          # Make all scripts executable
+          chmod +x lib/scripts/combined/*.sh
+          chmod +x lib/scripts/utils/*.sh
+          chmod +x lib/scripts/android/*.sh
+          chmod +x lib/scripts/ios-workflow/*.sh
+          chmod +x lib/scripts/ios/*.sh
+          chmod +x lib/scripts/combined/*.sh
+          # Single build attempt - no retries
+          echo "🏗️ Building Android APK (single attempt)"
+          if ./lib/scripts/android/main.sh; then
+            echo "✅ Build completed successfully!"
+          else
+            echo "❌ Build failed"
+            exit 1
+          fi
+          
+          echo "🏗️ Building Universal Combined Build (single attempt)"
+          if ./lib/scripts/combined/main.sh; then
+            echo "✅ Combined build completed successfully!"
+          else
+            echo "❌ Combined build failed"
+            exit 1
+          fi
+    artifacts:
+      - build/app/outputs/flutter-apk/app-release.apk
+      - build/app/outputs/bundle/release/app-release.aab
+      - build/ios/ipa/*.ipa
+      - ios/build/ios/ipa/*.ipa
+      - output/android/app-release.apk
+      - output/android/app-release.aab
+      - output/ios/Runner.ipa
+      - build/app/outputs/mapping/release/mapping.txt
+      - build/app/outputs/logs/
+      - build/ios/logs/

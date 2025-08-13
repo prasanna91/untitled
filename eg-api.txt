@@ -1,0 +1,224 @@
+example codemagic api variables are    "variables": {
+  "PROJECT_ID": "d432f107-c367-455-9fdd-86ec00ae78b8",
+  "APP_NAME": "Pixaware",
+  "VERSION_NAME": "1.0.1",
+  "VERSION_CODE": "10",
+  "WORKFLOW_ID": "android-publish",
+  "LOGO_URL": "https://raw.githubusercontent.com/prasanna91/QuikApp/main/pixaware_logo.png",
+  "SPLASH_URL": "https://raw.githubusercontent.com/prasanna91/QuikApp/main/pixaware_logo.png",
+  "SPLASH_BG_URL": "",
+  "SPLASH_BG_COLOR": "#cbdbf5",
+  "SPLASH_TAGLINE": "Pixaware",
+  "SPLASH_TAGLINE_COLOR": "#a30237",
+  "SPLASH_TAGLINE_FONT": "Roboto",
+  "SPLASH_TAGLINE_SIZE": "30",
+  "SPLASH_TAGLINE_BOLD": "false",
+  "SPLASH_TAGLINE_ITALIC": "false",
+  "SPLASH_ANIMATION": "zoom",
+  "SPLASH_DURATION": "4",
+  "PUSH_NOTIFY": "true",
+  "FIREBASE_CONFIG_ANDROID": "https://raw.githubusercontent.com/prasanna91/QuikApp/main/google-services-pixaware.json",
+  "USER_NAME": "prasannasrie",
+  "APP_ID": "10023",
+  "ORG_NAME": "Pixaware Technology Solutions Private Limited",
+  "WEB_URL": "https://pixaware.co/",
+  "PKG_NAME": "co.pixaware.pixaware",
+  "EMAIL_ID": "prasannasrinivasan32@gmail.com",
+  "IS_CHATBOT": "true",
+  "IS_DOMAIN_URL": "true",
+  "IS_SPLASH": "true",
+  "IS_PULLDOWN": "true",
+  "IS_BOTTOMMENU": "true",
+  "IS_LOAD_IND": "true",
+  "IS_GOOGLE_AUTH": "true",
+  "IS_APPLE_AUTH": "true",
+  "APPLE_TEAM_ID": "9H2AD7NQ49",
+  "IS_CAMERA": "false",
+  "IS_LOCATION": "false",
+  "IS_MIC": "true",
+  "IS_NOTIFICATION": "true",
+  "IS_CONTACT": "false",
+  "IS_BIOMETRIC": "false",
+  "IS_CALENDAR": "false",
+  "IS_STORAGE": "false",
+  "BOTTOMMENU_ITEMS": [
+    {
+      "label": "Home",
+      "icon": {
+        "type": "preset",
+        "name": "home_outlined"
+      },
+      "url": "https://pixaware.co/"
+    },
+    {
+      "label": "Solutions",
+      "icon": {
+        "type": "preset",
+        "name": "build"
+      },
+      "url": "https://pixaware.co/solutions/"
+    },
+    {
+      "label": "About",
+      "icon": {
+        "type": "preset",
+        "name": "info"
+      },
+      "url": "https://pixaware.co/who-we-are/"
+    },
+    {
+      "label": "Contact",
+      "icon": {
+        "type": "preset",
+        "name": "phone"
+      },
+      "url": "https://pixaware.co/lets-talk/"
+    }
+  ],
+  "BOTTOMMENU_BG_COLOR": "#FFFFFF",
+  "BOTTOMMENU_ICON_COLOR": "#6d6e8c",
+  "BOTTOMMENU_TEXT_COLOR": "#6d6e8c",
+  "BOTTOMMENU_FONT": "DM Sans",
+  "BOTTOMMENU_FONT_SIZE": "12",
+  "BOTTOMMENU_FONT_BOLD": "false",
+  "BOTTOMMENU_FONT_ITALIC": "false",
+  "BOTTOMMENU_ACTIVE_TAB_COLOR": "#a30237",
+  "BOTTOMMENU_ICON_POSITION": "above",
+  "KEY_STORE_URL": "https://raw.githubusercontent.com/prasanna91/QuikApp/main/keystore.jks",
+  "CM_KEYSTORE_PASSWORD": "opeN@1234",
+  "CM_KEY_ALIAS": "my_key_alias",
+  "CM_KEY_PASSWORD": "opeN@1234",
+  "ENABLE_EMAIL_NOTIFICATIONS": "true",
+  "EMAIL_SMTP_SERVER": "smtp.gmail.com",
+  "EMAIL_SMTP_PORT": "587",
+  "EMAIL_SMTP_USER": "prasannasrie@gmail.com",
+  "EMAIL_SMTP_PASS": "lrnu krfm aarp urux"
+} and for  ios-workflow     "variables": {
+      // App Metadata
+      "PROJECT_ID": "d432f107-c367-45a5-9fdd-86ec00ae78b8",
+      "APP_NAME": "Pixaware",
+      "VERSION_NAME": "1.0.1",
+      "VERSION_CODE": "9",
+      "BUNDLE_ID": "co.pixaware.Pixaware",
+      "APPLE_TEAM_ID": "9H2AD7NQ49",
+      
+      // iOS Code Signing
+      "CERT_TYPE": "p12",//p12,manual
+      "CERT_P12_URL": "https://raw.githubusercontent.com/prasanna91/QuikApp/main/Certificates.p12",
+      "CERT_PASSWORD": "quikapp2025",
+      "CERT_KEY_URL": "",
+      "CERT_CER_URL": "",
+
+      "PROFILE_URL": "https://raw.githubusercontent.com/prasanna91/QuikApp/main/Pixaware.mobileprovision",
+      "PROFILE_TYPE": "app-store",
+      
+      
+      // Build Configuration
+      "WORKFLOW_ID": "ios-workflow",
+      "IS_TESTFLIGHT": "true",
+      "UPLOAD_TO_APP_STORE": "true",
+      "APP_STORE_CONNECT_KEY_IDENTIFIER": "S95LCWAH99",
+      "APP_STORE_CONNECT_ISSUER_ID": "a99a2ebd-ed3e-4117-9f97-f195823774a7",
+      "APP_STORE_CONNECT_API_KEY_URL": "https://raw.githubusercontent.com/prasanna91/QuikApp/main/AuthKey_S95LCWAH99.p8",
+      
+      // Branding Assets
+      "LOGO_URL": "https://raw.githubusercontent.com/prasanna91/QuikApp/main/pixaware_logo.png",
+      "SPLASH_URL": "https://raw.githubusercontent.com/prasanna91/QuikApp/main/pixaware_logo.png",
+      "SPLASH_BG_URL": "",
+      "SPLASH_BG_COLOR": "#cbdbf5",
+      "SPLASH_TAGLINE": "Pixaware",
+      "SPLASH_TAGLINE_COLOR": "#a30237",
+      "SPLASH_TAGLINE_FONT": "Roboto",
+      "SPLASH_TAGLINE_SIZE": "30",
+      "SPLASH_TAGLINE_BOLD": "false",
+      "SPLASH_TAGLINE_ITALIC": "false",
+      "SPLASH_ANIMATION": "zoom",
+      "SPLASH_DURATION": "4",
+      
+      // Firebase & Push Notifications
+      "PUSH_NOTIFY": "true",
+      "FIREBASE_CONFIG_IOS": "https://raw.githubusercontent.com/prasanna91/QuikApp/main/GoogleService-Info-pixaware.plist",
+      "APNS_KEY_ID": "T4B6DW3Y7D",
+      "APNS_AUTH_KEY_URL": "https://raw.githubusercontent.com/prasanna91/QuikApp/main/AuthKey_T4B6DW3Y7D.p88",
+      
+      // App Information
+      "USER_NAME": "prasannasrie",
+      "APP_ID": "10023",
+      "ORG_NAME": "Pixaware Technology Solutions Private Limited",
+      "WEB_URL": "https://pixaware.co/",
+      "PKG_NAME": "co.pixaware.Pixaware",
+      "EMAIL_ID": "prasannasrinivasan32@gmail.com",
+      
+      // Feature Flags
+      "IS_CHATBOT": "true",
+      "IS_DOMAIN_URL": "true",
+      "IS_SPLASH": "true",
+      "IS_PULLDOWN": "true",
+      "IS_BOTTOMMENU": "true",
+      "IS_LOAD_IND": "true",
+      "IS_GOOGLE_AUTH": "true",
+      "IS_APPLE_AUTH": "true",
+      
+      // Permissions
+      "IS_CAMERA": "false",
+      "IS_LOCATION": "false",
+      "IS_MIC": "true",
+      "IS_NOTIFICATION": "true",
+      "IS_CONTACT": "false",
+      "IS_BIOMETRIC": "false",
+      "IS_CALENDAR": "false",
+      "IS_STORAGE": "false",
+      
+      // Bottom Menu Configuration
+        // Bottom Menu Configuration
+      "BOTTOMMENU_ITEMS": [
+        {
+          "label": "Home",
+          "icon": {
+            "type": "preset",
+            "name": "home_outlined"
+          },
+          "url": "https://pixaware.co/"
+        },
+        {
+          "label": "Solutions",
+          "icon": {
+            "type": "preset",
+            "name": "build"
+          },
+          "url": "https://pixaware.co/solutions/"
+        },
+        {
+          "label": "About",
+          "icon": {
+            "type": "preset",
+            "name": "info"
+          },
+          "url": "https://pixaware.co/who-we-are/"
+        },
+        {
+          "label": "Contact",
+          "icon": {
+            "type": "preset",
+            "name": "phone"
+          },
+          "url": "https://pixaware.co/lets-talk/"
+        }
+      ],
+      "BOTTOMMENU_BG_COLOR": "#FFFFFF",
+      "BOTTOMMENU_ICON_COLOR": "#6d6e8c",
+      "BOTTOMMENU_TEXT_COLOR": "#6d6e8c",
+      "BOTTOMMENU_FONT": "DM Sans",
+      "BOTTOMMENU_FONT_SIZE": "12",
+      "BOTTOMMENU_FONT_BOLD": "false",
+      "BOTTOMMENU_FONT_ITALIC": "false",
+      "BOTTOMMENU_ACTIVE_TAB_COLOR": "#a30237",
+      "BOTTOMMENU_ICON_POSITION": "above",
+      
+      // Email Configuration
+      "ENABLE_EMAIL_NOTIFICATIONS": "true",
+      "EMAIL_SMTP_SERVER": "smtp.gmail.com",
+      "EMAIL_SMTP_PORT": "587",
+      "EMAIL_SMTP_USER": "prasannasrie@gmail.com",
+      "EMAIL_SMTP_PASS": "lrnu krfm aarp urux"
+    }
