@@ -377,7 +377,12 @@ workflows:
           trap 'echo "❌ Error occurred at line $LINENO. Exit code: $?" >&2; exit 1' ERR
           
           echo "📊 Build Environment:"
-          echo "  - Flutter: $(flutter --version | head -1)"
+          # Make Flutter version check more robust
+          if flutter --version >/dev/null 2>&1; then
+            echo "  - Flutter: $(flutter --version 2>/dev/null | head -1 || echo 'Flutter available')"
+          else
+            echo "  - Flutter: Flutter command available but version check failed"
+          fi
           echo "  - Java: $(java -version 2>&1 | head -1)"
           
           # Check if gradlew exists before trying to use it
@@ -417,7 +422,7 @@ workflows:
 
           # Verify critical environment variables
           echo "🔍 Verifying critical environment variables..."
-          local missing_vars=()
+          missing_vars=()
           
           for var in "PROJECT_ID" "APP_ID" "VERSION_NAME" "VERSION_CODE" "PKG_NAME"; do
             if [[ -z "${!var:-}" ]]; then
