@@ -948,6 +948,16 @@ create_android_config() {
             if command -v flutter >/dev/null 2>&1; then
                 log_info "Flutter command found, trying simple path detection..."
                 
+                # Debug: show what flutter command outputs
+                log_info "Testing Flutter command output..."
+                if timeout 10s flutter --version >/dev/null 2>&1; then
+                    log_info "Flutter --version command works"
+                    local flutter_version_output=$(timeout 10s flutter --version 2>/dev/null | head -1 || echo "Failed to get version")
+                    log_info "Flutter version output: $flutter_version_output"
+                else
+                    log_warning "Flutter --version command failed or timed out"
+                fi
+                
                 # Try simple which command first (more reliable)
                 local flutter_which=""
                 if timeout 10s which flutter >/dev/null 2>&1; then
@@ -1021,26 +1031,86 @@ EOF
             then
                 log_success "Created local.properties with SDK path: $sdk_path"
                 
-                # Add Flutter SDK path if found
-                if [[ -n "$flutter_sdk_path" ]]; then
-                    if echo "flutter.sdk=$flutter_sdk_path" >> "$local_props"; then
-                        log_success "Added Flutter SDK path: $flutter_sdk_path"
-                        log_success "Created local.properties with SDK path: $sdk_path and Flutter SDK: $flutter_sdk_path"
+                            # Add Flutter SDK path if found
+            if [[ -n "$flutter_sdk_path" ]]; then
+                log_info "Adding Flutter SDK path to local.properties: flutter.sdk=$flutter_sdk_path"
+                if echo "flutter.sdk=$flutter_sdk_path" >> "$local_props"; then
+                    log_success "Added Flutter SDK path: $flutter_sdk_path"
+                    log_success "Created local.properties with SDK path: $sdk_path and Flutter SDK: $flutter_sdk_path"
+                else
+                    log_error "Failed to add Flutter SDK path to local.properties"
+                    return 1
+                fi
+            else
+                log_warning "Flutter SDK path not found - attempting emergency fallback..."
+                
+                # Emergency fallback: try to find Flutter SDK in common locations
+                local emergency_flutter_paths=(
+                    "/usr/local/flutter"
+                    "/opt/flutter"
+                    "$HOME/flutter"
+                    "/usr/lib/flutter"
+                    "/opt/flutter-linux"
+                    "/usr/local/share/flutter"
+                    "/usr/local/bin/flutter"
+                )
+                
+                local found_emergency_path=""
+                for path in "${emergency_flutter_paths[@]}"; do
+                    if [[ -d "$path" && -f "$path/bin/flutter" ]]; then
+                        found_emergency_path="$path"
+                        log_info "Found emergency Flutter SDK path: $found_emergency_path"
+                        break
+                    fi
+                done
+                
+                if [[ -n "$found_emergency_path" ]]; then
+                    log_info "Adding emergency Flutter SDK path: flutter.sdk=$found_emergency_path"
+                    if echo "flutter.sdk=$found_emergency_path" >> "$local_props"; then
+                        log_success "Added emergency Flutter SDK path: $found_emergency_path"
+                        flutter_sdk_path="$found_emergency_path"
                     else
-                        log_error "Failed to add Flutter SDK path to local.properties"
-                        return 1
+                        log_error "Failed to add emergency Flutter SDK path"
                     fi
                 else
-                    log_success "Created local.properties with SDK path: $sdk_path"
-                    log_warning "Flutter SDK path not found - may cause build issues"
+                    log_error "No Flutter SDK found in any location - build will likely fail"
+                    log_error "Available Flutter-related paths:"
+                    find /usr/local /opt /usr/lib "$HOME" -name "*flutter*" -type d 2>/dev/null | head -10 | while read -r path; do
+                        log_info "  $path"
+                    done
                 fi
+                
+                log_success "Created local.properties with SDK path: $sdk_path"
+                log_warning "Flutter SDK path not found - may cause build issues"
+            fi
                 
                 # Verify the file was created successfully
                 if [[ -f "$local_props" ]]; then
                     log_info "local.properties file created successfully:"
+                    log_info "File contents:"
                     cat "$local_props" | while read -r line; do
                         log_info "  $line"
                     done
+                    
+                    # Verify flutter.sdk is present
+                    if grep -q "^flutter.sdk=" "$local_props"; then
+                        local actual_flutter_sdk=$(grep "^flutter.sdk=" "$local_props" | cut -d'=' -f2)
+                        log_success "flutter.sdk verified in local.properties: $actual_flutter_sdk"
+                    else
+                        log_error "flutter.sdk line is missing from local.properties!"
+                        log_error "This will cause the build to fail"
+                        return 1
+                    fi
+                    
+                    # Verify sdk.dir is present
+                    if grep -q "^sdk.dir=" "$local_props"; then
+                        local actual_sdk_dir=$(grep "^sdk.dir=" "$local_props" | cut -d'=' -f2)
+                        log_success "sdk.dir verified in local.properties: $actual_sdk_dir"
+                    else
+                        log_error "sdk.dir line is missing from local.properties!"
+                        log_error "This will cause the build to fail"
+                        return 1
+                    fi
                 else
                     log_error "local.properties file was not created"
                     return 1
