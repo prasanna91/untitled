@@ -14,6 +14,39 @@ BUILD_MODE="${BUILD_MODE:-apk}"
 OUTPUT_DIR="output/android"
 BUILD_DIR="build/app/outputs"
 
+# Function to verify Android project structure
+verify_android_project() {
+    log_step "Verifying Android project structure"
+    
+    local project_root="$(pwd)"
+    local android_dir="$project_root/android"
+    local gradlew="$android_dir/gradlew"
+    
+    # Check if android directory exists
+    if [[ ! -d "$android_dir" ]]; then
+        log_error "Android directory not found at $android_dir"
+        log_error "Current working directory: $project_root"
+        log_error "Directory contents:"
+        ls -la "$project_root" || true
+        return 1
+    fi
+    
+    # Check if gradlew exists
+    if [[ ! -f "$gradlew" ]]; then
+        log_error "Gradle wrapper not found at $gradlew"
+        log_error "Android directory contents:"
+        ls -la "$android_dir" || true
+        return 1
+    fi
+    
+    # Make gradlew executable
+    chmod +x "$gradlew" 2>/dev/null || log_warning "Could not make gradlew executable"
+    
+    log_success "Android project structure verified"
+    log_info "Android directory: $android_dir"
+    log_info "Gradle wrapper: $gradlew"
+}
+
 # Function to setup build environment
 setup_build_environment() {
     log_step "Setting up Android build environment"
@@ -44,15 +77,18 @@ setup_keystore() {
     if [[ -n "${KEY_STORE_URL:-}" ]]; then
         log_step "Setting up Android keystore for signing"
         
-        # Download keystore
-        local keystore_path="android/app/keystore.jks"
+        # Download keystore - use absolute path
+        local project_root="$(pwd)"
+        local keystore_path="$project_root/android/app/keystore.jks"
         mkdir -p "$(dirname "$keystore_path")"
         
         if curl -L -o "$keystore_path" "$KEY_STORE_URL"; then
             log_success "Keystore downloaded successfully"
             
             # Update gradle.properties with keystore info
-            cat >> android/gradle.properties << EOF
+            local gradle_props="$project_root/android/gradle.properties"
+            if [[ -f "$gradle_props" ]]; then
+                cat >> "$gradle_props" << EOF
 
 # Keystore configuration for release builds
 RELEASE_STORE_FILE=keystore.jks
@@ -60,7 +96,10 @@ RELEASE_KEY_ALIAS=${CM_KEY_ALIAS:-my_key_alias}
 RELEASE_STORE_PASSWORD=${CM_KEYSTORE_PASSWORD:-}
 RELEASE_KEY_PASSWORD=${CM_KEY_PASSWORD:-}
 EOF
-            log_success "Keystore configuration added to gradle.properties"
+                log_success "Keystore configuration added to gradle.properties"
+            else
+                log_warning "gradle.properties not found at $gradle_props"
+            fi
         else
             log_error "Failed to download keystore from $KEY_STORE_URL"
             return 1
@@ -75,7 +114,9 @@ setup_firebase() {
     if [[ -n "${FIREBASE_CONFIG_ANDROID:-}" ]]; then
         log_step "Setting up Firebase configuration"
         
-        local firebase_config_path="android/app/google-services.json"
+        # Use absolute path for Firebase config
+        local project_root="$(pwd)"
+        local firebase_config_path="$project_root/android/app/google-services.json"
         
         if curl -L -o "$firebase_config_path" "$FIREBASE_CONFIG_ANDROID"; then
             log_success "Firebase configuration downloaded successfully"
@@ -92,11 +133,17 @@ setup_firebase() {
 update_app_config() {
     log_step "Updating app configuration"
     
-    # Update app name in strings.xml
+    # Update app name in strings.xml - use absolute path
     if [[ -n "${APP_NAME:-}" ]]; then
-        sed -i.bak "s/<string name=\"app_name\">.*<\/string>/<string name=\"app_name\">$APP_NAME<\/string>/" \
-            android/app/src/main/res/values/strings.xml
-        log_info "Updated app name to: $APP_NAME"
+        local project_root="$(pwd)"
+        local strings_file="$project_root/android/app/src/main/res/values/strings.xml"
+        
+        if [[ -f "$strings_file" ]]; then
+            sed -i.bak "s/<string name=\"app_name\">.*<\/string>/<string name=\"app_name\">$APP_NAME<\/string>/" "$strings_file"
+            log_info "Updated app name to: $APP_NAME"
+        else
+            log_warning "strings.xml not found at $strings_file"
+        fi
     fi
     
     # Update package name if provided
@@ -116,10 +163,16 @@ clean_builds() {
     # Clean Flutter
     flutter clean
     
-    # Clean Gradle
-    cd android
-    ./gradlew clean
-    cd ..
+    # Clean Gradle - use absolute path to ensure we're in the right directory
+    local android_dir="$(pwd)/android"
+    if [[ -d "$android_dir" && -f "$android_dir/gradlew" ]]; then
+        cd "$android_dir"
+        ./gradlew clean
+        cd - > /dev/null  # Return to previous directory
+    else
+        log_warning "Android directory or gradlew not found at $android_dir"
+        log_info "Skipping Gradle clean, continuing with build..."
+    fi
     
     # Remove output directory
     rm -rf "$OUTPUT_DIR"/*
@@ -206,8 +259,9 @@ EOF
 create_android_resources() {
     log_step "Creating missing Android resource files"
     
-    # Create values directory
-    local values_dir="android/app/src/main/res/values"
+    # Create values directory - use absolute path
+    local project_root="$(pwd)"
+    local values_dir="$project_root/android/app/src/main/res/values"
     mkdir -p "$values_dir"
     
     # Create strings.xml if it doesn't exist
@@ -261,6 +315,19 @@ EOF
 main() {
     log_info "Starting Android build process"
     log_info "Build Type: $BUILD_TYPE, Mode: $BUILD_MODE"
+    
+    # Log current working directory and project structure
+    log_info "Current working directory: $(pwd)"
+    log_info "Project structure:"
+    ls -la . || true
+    log_info "Android directory contents:"
+    ls -la android/ 2>/dev/null || log_warning "Cannot list android directory"
+    
+    # Verify Android project structure first
+    if ! verify_android_project; then
+        log_error "Android project structure verification failed"
+        exit 1
+    fi
     
     # Setup environment
     setup_build_environment
