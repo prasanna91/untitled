@@ -11,7 +11,7 @@ class EnvConfig {
   static const int versionCode = 1;
   static const String appName = "QuikApp";
   static const String orgName = "QuikApp";
-  static const String webUrl = "https://quikapp.co";
+  static const String webUrl = "https://pixaware.co";
   static const String userName = "developer";
   static const String emailId = "dev@quikapp.co";
   static const String branch = "main";
@@ -19,29 +19,30 @@ class EnvConfig {
 
   // Package Identifiers
   static const String pkgName = "com.quikapp.app";
-  static const String bundleId = ""; // Bundle ID not available for Android-only builds
+  static const String bundleId =
+      ""; // Bundle ID not available for Android-only builds
 
   // Feature Flags (converted to bool)
   static const bool pushNotify = false;
-  static const bool isChatbot = false;
-  static const bool isDomainUrl = false;
-  static const bool isSplash = false;
-  static const bool isPulldown = false;
-  static const bool isBottommenu = false;
-  static const bool isLoadIndicator = false;
+  static const bool isChatbot = true;
+  static const bool isDomainUrl = true;
+  static const bool isSplash = true;
+  static const bool isPulldown = true;
+  static const bool isBottommenu = true;
+  static const bool isLoadIndicator = true;
 
   // Permissions (converted to bool)
   static const bool isCamera = false;
   static const bool isLocation = false;
-  static const bool isMic = false;
-  static const bool isNotification = false;
+  static const bool isMic = true;
+  static const bool isNotification = true;
   static const bool isContact = false;
   static const bool isBiometric = false;
   static const bool isCalendar = false;
   static const bool isStorage = false;
 
   // OAuth Authentication
-  static const bool isGoogleAuth = false;
+  static const bool isGoogleAuth = true;
   static const bool isAppleAuth = false;
 
   // UI/Branding
@@ -49,7 +50,7 @@ class EnvConfig {
   static const String splashUrl = "";
   static const String splashBg = "";
   static const String splashBgColor = "#FFFFFF";
-  static const String splashTagline = "QuikApp";
+  static const String splashTagline = "PixAware";
   static const String splashTaglineColor = "#000000";
   static const String splashTaglineFont = "Roboto";
   static const String splashTaglineSize = "20";
@@ -59,17 +60,50 @@ class EnvConfig {
   static const int splashDuration = 3;
 
   // Bottom Menu Configuration
-  static const String bottommenuItems = "[]";
-  static const String bottommenuBgColor = "";
-  static const String bottommenuIconColor = "";
-  static const String bottommenuTextColor = "";
-  static const String bottommenuFont = "";
-  static const double bottommenuFontSize = 0;
+  static const String bottommenuItems = """[
+    {
+      "label": "Home",
+      "icon": {
+        "type": "preset",
+        "name": "home_outlined"
+      },
+      "url": "https://pixaware.co/"
+    },
+    {
+      "label": "Solutions",
+      "icon": {
+        "type": "preset",
+        "name": "build"
+      },
+      "url": "https://pixaware.co/solutions/"
+    },
+    {
+      "label": "About",
+      "icon": {
+        "type": "preset",
+        "name": "info"
+      },
+      "url": "https://pixaware.co/who-we-are/"
+    },
+    {
+      "label": "Contact",
+      "icon": {
+        "type": "preset",
+        "name": "phone"
+      },
+      "url": "https://pixaware.co/lets-talk/"
+    }
+  ]""";
+  static const String bottommenuBgColor = "#FFFFFF";
+  static const String bottommenuIconColor = "#000000";
+  static const String bottommenuTextColor = "#000000";
+  static const String bottommenuFont = "Roboto";
+  static const double bottommenuFontSize = 12;
   static const bool bottommenuFontBold = false;
   static const bool bottommenuFontItalic = false;
-  static const String bottommenuActiveTabColor = "";
-  static const String bottommenuIconPosition = "";
-  static const String bottommenuVisibleOn = "";
+  static const String bottommenuActiveTabColor = "#000000";
+  static const String bottommenuIconPosition = "above";
+  static const String bottommenuVisibleOn = "all";
 
   // Firebase Configuration
   static const String firebaseConfigAndroid = "";
@@ -103,7 +137,9 @@ class EnvConfig {
   static bool get isAndroidBuild => workflowId.startsWith('android');
   static bool get isIosBuild => workflowId.contains('ios');
   static bool get isCombinedBuild => workflowId == 'combined';
-  static bool get hasFirebase => firebaseConfigAndroid.isNotEmpty || firebaseConfigIos.isNotEmpty;
+  static bool get hasFirebase =>
+      firebaseConfigAndroid.isNotEmpty || firebaseConfigIos.isNotEmpty;
   static bool get hasKeystore => keyStoreUrl.isNotEmpty;
-  static bool get hasIosSigning => false; // iOS signing not available for Android-only builds
+  static bool get hasIosSigning =>
+      false; // iOS signing not available for Android-only builds
 }

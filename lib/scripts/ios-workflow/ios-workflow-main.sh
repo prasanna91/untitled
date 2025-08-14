@@ -1,418 +1,320 @@
 #!/bin/bash
 
-# 🚀 iOS Workflow Main Script for Codemagic CI/CD
-# Handles complete iOS build process including code signing and App Store distribution
+# 🚀 iOS Workflow Main Script - Upgraded Version for Codemagic CI/CD
+# Orchestrates complete iOS build process including code signing and App Store distribution
 
 # Source logging utilities
 source "$(dirname "$0")/../utils/logging.sh"
 
-log_section "iOS Workflow - Complete Build Process"
+log_section "iOS Workflow - Complete Enhanced Build Process"
 
 # Configuration
 BUILD_TYPE="${BUILD_TYPE:-release}"
-OUTPUT_DIR="output/ios"
-BUILD_DIR="build/ios"
-ARCHIVE_DIR="build/Runner.xcarchive"
-IPA_DIR="build/export"
+PROFILE_TYPE="${PROFILE_TYPE:-app-store}"
+TARGET_ONLY_MODE="${TARGET_ONLY_MODE:-false}"
+MAX_RETRIES="${MAX_RETRIES:-2}"
+IS_TESTFLIGHT="${IS_TESTFLIGHT:-false}"
+SEND_BUILD_NOTIFICATIONS="${SEND_BUILD_NOTIFICATIONS:-false}"
 
-# Function to setup iOS build environment
-setup_ios_environment() {
-    log_step "Setting up iOS build environment"
+# Script paths
+PRE_BUILD_SCRIPT="$(dirname "$0")/pre-build.sh"
+BUILD_SCRIPT="$(dirname "$0")/build.sh"
+POST_BUILD_SCRIPT="$(dirname "$0")/post-build.sh"
+
+# Function to display workflow configuration
+display_workflow_config() {
+    log_step "Workflow Configuration"
     
-    # Create output directories
-    mkdir -p "$OUTPUT_DIR"
-    mkdir -p "$BUILD_DIR"
-    mkdir -p "$ARCHIVE_DIR"
-    mkdir -p "$IPA_DIR"
-    
-    # Set iOS optimization flags
-    export XCODE_FAST_BUILD=true
-    export XCODE_SKIP_SIGNING=false
-    export XCODE_OPTIMIZATION=true
-    export XCODE_CLEAN_BUILD=true
-    export XCODE_PARALLEL_BUILD=true
-    
-    # Set CocoaPods optimization flags
-    export COCOAPODS_FAST_INSTALL=true
-    export COCOAPODS_PARALLEL_INSTALL=true
-    
-    # Set Flutter optimization flags
-    export FLUTTER_PUB_CACHE=true
-    export FLUTTER_VERBOSE=false
-    export FLUTTER_ANALYZE=true
-    export FLUTTER_TEST=false
-    
-    log_success "iOS build environment setup completed"
+    echo "🚀 iOS Workflow Configuration:"
+    echo "  - Build Type: $BUILD_TYPE"
+    echo "  - Profile Type: $PROFILE_TYPE"
+    echo "  - Target-Only Mode: $TARGET_ONLY_MODE"
+    echo "  - Max Retries: $MAX_RETRIES"
+    echo "  - TestFlight Upload: $IS_TESTFLIGHT"
+    echo "  - Build Notifications: $SEND_BUILD_NOTIFICATIONS"
+    echo ""
+    echo "📁 Script Paths:"
+    echo "  - Pre-Build: $PRE_BUILD_SCRIPT"
+    echo "  - Build: $BUILD_SCRIPT"
+    echo "  - Post-Build: $POST_BUILD_SCRIPT"
 }
 
-# Function to download and setup certificates
-setup_certificates() {
-    log_step "Setting up iOS certificates and provisioning profiles"
+# Function to validate script availability
+validate_scripts() {
+    log_step "Validating workflow scripts"
     
-    # Download certificate if provided
-    if [[ -n "${CERT_P12_URL:-}" ]]; then
-        local cert_path="ios/Runner/Certificates.p12"
-        mkdir -p "$(dirname "$cert_path")"
-        
-        if curl -L -o "$cert_path" "$CERT_P12_URL"; then
-            log_success "Certificate downloaded successfully"
-            
-            # Import certificate to keychain
-            security import "$cert_path" -k login.keychain -P "${CERT_PASSWORD:-}" -T /usr/bin/codesign
-            log_success "Certificate imported to keychain"
-        else
-            log_error "Failed to download certificate from $CERT_P12_URL"
-            return 1
-        fi
-    else
-        log_warning "No certificate URL provided"
+    local missing_scripts=()
+    
+    # Check pre-build script
+    if [ ! -f "$PRE_BUILD_SCRIPT" ]; then
+        missing_scripts+=("pre-build.sh")
     fi
     
-    # Download provisioning profile if provided
-    if [[ -n "${PROFILE_URL:-}" ]]; then
-        local profile_path="ios/Runner/Runner.mobileprovision"
-        
-        if curl -L -o "$profile_path" "$PROFILE_URL"; then
-            log_success "Provisioning profile downloaded successfully"
-            
-            # Install provisioning profile
-            mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles/
-            cp "$profile_path" ~/Library/MobileDevice/Provisioning\ Profiles/
-            log_success "Provisioning profile installed"
-        else
-            log_error "Failed to download provisioning profile from $PROFILE_URL"
-            return 1
-        fi
-    else
-        log_warning "No provisioning profile URL provided"
-    fi
-}
-
-# Function to download Firebase configuration
-setup_firebase_ios() {
-    if [[ -n "${FIREBASE_CONFIG_IOS:-}" ]]; then
-        log_step "Setting up iOS Firebase configuration"
-        
-        local firebase_config_path="ios/Runner/GoogleService-Info.plist"
-        
-        if curl -L -o "$firebase_config_path" "$FIREBASE_CONFIG_IOS"; then
-            log_success "iOS Firebase configuration downloaded successfully"
-        else
-            log_error "Failed to download iOS Firebase configuration"
-            return 1
-        fi
-    else
-        log_warning "No iOS Firebase configuration provided"
-    fi
-}
-
-# Function to download APNS key
-setup_apns() {
-    if [[ -n "${APNS_AUTH_KEY_URL:-}" ]]; then
-        log_step "Setting up APNS authentication key"
-        
-        local apns_key_path="ios/Runner/AuthKey_${APNS_KEY_ID:-}.p8"
-        
-        if curl -L -o "$apns_key_path" "$APNS_AUTH_KEY_URL"; then
-            log_success "APNS authentication key downloaded successfully"
-        else
-            log_error "Failed to download APNS authentication key"
-            return 1
-        fi
-    else
-        log_warning "No APNS authentication key provided"
-    fi
-}
-
-# Function to update iOS project configuration
-update_ios_config() {
-    log_step "Updating iOS project configuration"
-    
-    # Update bundle identifier if provided
-    if [[ -n "${BUNDLE_ID:-}" ]]; then
-        log_info "Updating bundle identifier to: $BUNDLE_ID"
-        
-        # Update Info.plist
-        sed -i.bak "s/CFBundleIdentifier.*/CFBundleIdentifier = $BUNDLE_ID;/" \
-            ios/Runner/Info.plist
-        
-        # Update project.pbxproj
-        sed -i.bak "s/PRODUCT_BUNDLE_IDENTIFIER = .*;/PRODUCT_BUNDLE_IDENTIFIER = $BUNDLE_ID;/g" \
-            ios/Runner.xcodeproj/project.pbxproj
-        
-        log_success "Bundle identifier updated to: $BUNDLE_ID"
+    # Check build script
+    if [ ! -f "$BUILD_SCRIPT" ]; then
+        missing_scripts+=("build.sh")
     fi
     
-    # Update app name if provided
-    if [[ -n "${APP_NAME:-}" ]]; then
-        log_info "Updating app name to: $APP_NAME"
-        
-        # Update Info.plist
-        sed -i.bak "s/CFBundleDisplayName.*/CFBundleDisplayName = $APP_NAME;/" \
-            ios/Runner/Info.plist
-        
-        log_success "App name updated to: $APP_NAME"
+    # Check post-build script
+    if [ ! -f "$POST_BUILD_SCRIPT" ]; then
+        missing_scripts+=("post-build.sh")
     fi
     
-    # Update team ID if provided
-    if [[ -n "${APPLE_TEAM_ID:-}" ]]; then
-        log_info "Updating team ID to: $APPLE_TEAM_ID"
-        
-        # Update project.pbxproj
-        sed -i.bak "s/DEVELOPMENT_TEAM = .*;/DEVELOPMENT_TEAM = $APPLE_TEAM_ID;/g" \
-            ios/Runner.xcodeproj/project.pbxproj
-        
-        log_success "Team ID updated to: $APPLE_TEAM_ID"
-    fi
-}
-
-# Function to clean previous builds
-clean_ios_builds() {
-    log_step "Cleaning previous iOS builds"
-    
-    # Clean Flutter
-    flutter clean
-    
-    # Clean iOS build artifacts
-    rm -rf ios/build/
-    rm -rf ios/Pods/
-    rm -rf "$BUILD_DIR"
-    rm -rf "$ARCHIVE_DIR"
-    rm -rf "$IPA_DIR"
-    
-    # Clean CocoaPods
-    cd ios
-    pod deintegrate 2>/dev/null || true
-    pod cache clean --all 2>/dev/null || true
-    cd ..
-    
-    log_success "iOS build cleanup completed"
-}
-
-# Function to install CocoaPods dependencies
-install_cocoapods() {
-    log_step "Installing CocoaPods dependencies"
-    
-    cd ios
-    
-    # Install CocoaPods if not available
-    if ! command -v pod &> /dev/null; then
-        log_info "Installing CocoaPods..."
-        sudo gem install cocoapods
-    fi
-    
-    # Install pods
-    if pod install --repo-update; then
-        log_success "CocoaPods dependencies installed successfully"
-    else
-        log_error "Failed to install CocoaPods dependencies"
-        cd ..
+    if [ ${#missing_scripts[@]} -gt 0 ]; then
+        log_error "Missing required scripts: ${missing_scripts[*]}"
         return 1
     fi
     
-    cd ..
+    # Make scripts executable
+    chmod +x "$PRE_BUILD_SCRIPT"
+    chmod +x "$BUILD_SCRIPT"
+    chmod +x "$POST_BUILD_SCRIPT"
+    
+    log_success "All workflow scripts are available and executable"
 }
 
-# Function to build Flutter iOS
-build_flutter_ios() {
-    log_step "Building Flutter iOS app"
+# Function to execute pre-build phase
+execute_prebuild_phase() {
+    log_step "Executing Pre-Build Phase"
     
-    local build_args="--release --no-codesign"
-    
-    if flutter build ios $build_args; then
-        log_success "Flutter iOS build completed successfully"
+    if [ -f "$PRE_BUILD_SCRIPT" ]; then
+        log_info "Running pre-build script: $PRE_BUILD_SCRIPT"
+        
+        # Set environment variables for pre-build
+        export BUILD_TYPE="$BUILD_TYPE"
+        export PROFILE_TYPE="$PROFILE_TYPE"
+        export TARGET_ONLY_MODE="$TARGET_ONLY_MODE"
+        
+        if bash "$PRE_BUILD_SCRIPT"; then
+            log_success "Pre-build phase completed successfully"
+        else
+            log_error "Pre-build phase failed"
+            return 1
+        fi
     else
-        log_error "Flutter iOS build failed"
+        log_error "Pre-build script not found: $PRE_BUILD_SCRIPT"
         return 1
     fi
 }
 
-# Function to create Xcode archive
-create_xcode_archive() {
-    log_step "Creating Xcode archive"
+# Function to execute build phase
+execute_build_phase() {
+    log_step "Executing Build Phase"
     
-    cd ios
-    
-    # Create archive
-    if xcodebuild -workspace Runner.xcworkspace \
-                   -scheme Runner \
-                   -configuration Release \
-                   -archivePath ../build/Runner.xcarchive \
-                   archive; then
-        log_success "Xcode archive created successfully"
-    else
-        log_error "Failed to create Xcode archive"
-        cd ..
-        return 1
-    fi
-    
-    cd ..
-}
-
-# Function to export IPA
-export_ipa() {
-    log_step "Exporting IPA from archive"
-    
-    # Create ExportOptions.plist
-    cat > ios/ExportOptions.plist << EOF
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>method</key>
-    <string>${PROFILE_TYPE:-app-store}</string>
-    <key>teamID</key>
-    <string>${APPLE_TEAM_ID:-}</string>
-    <key>uploadBitcode</key>
-    <false/>
-    <key>uploadSymbols</key>
-    <true/>
-    <key>compileBitcode</key>
-    <false/>
-    <key>stripSwiftSymbols</key>
-    <true/>
-    <key>thinning</key>
-    <string>&lt;none&gt;</string>
-</dict>
-</plist>
-EOF
-
-    # Export IPA
-    if xcodebuild -exportArchive \
-                   -archivePath "$ARCHIVE_DIR" \
-                   -exportPath "$IPA_DIR" \
-                   -exportOptionsPlist ios/ExportOptions.plist; then
-        log_success "IPA exported successfully"
+    if [ -f "$BUILD_SCRIPT" ]; then
+        log_info "Running build script: $BUILD_SCRIPT"
         
-        # Copy IPA to output directory
-        cp "$IPA_DIR"/*.ipa "$OUTPUT_DIR/"
-        log_info "IPA copied to output directory"
-    else
-        log_error "Failed to export IPA"
-        return 1
-    fi
-}
-
-# Function to upload to App Store Connect
-upload_to_app_store() {
-    if [[ "${IS_TESTFLIGHT:-false}" == "true" ]] && [[ -n "${APP_STORE_CONNECT_API_KEY_URL:-}" ]]; then
-        log_step "Uploading to App Store Connect for TestFlight"
+        # Set environment variables for build
+        export BUILD_TYPE="$BUILD_TYPE"
+        export OUTPUT_DIR="output/ios"
+        export BUILD_DIR="build/ios"
+        export ARCHIVE_DIR="build/Runner.xcarchive"
+        export IPA_DIR="build/export"
+        export TARGET_ONLY_MODE="$TARGET_ONLY_MODE"
+        export MAX_RETRIES="$MAX_RETRIES"
         
-        # Download API key
-        local api_key_path="ios/Runner/AuthKey_${APP_STORE_CONNECT_KEY_IDENTIFIER:-}.p8"
-        
-        if curl -L -o "$api_key_path" "$APP_STORE_CONNECT_API_KEY_URL"; then
-            log_success "App Store Connect API key downloaded"
-            
-            # Upload using altool
-            local ipa_file=$(find "$OUTPUT_DIR" -name "*.ipa" | head -1)
-            if [[ -n "$ipa_file" ]]; then
-                if xcrun altool --upload-app \
-                                --type ios \
-                                --file "$ipa_file" \
-                                --apiKey "${APP_STORE_CONNECT_KEY_IDENTIFIER:-}" \
-                                --apiIssuer "${APP_STORE_CONNECT_ISSUER_ID:-}" \
-                                --verbose; then
-                    log_success "App uploaded to App Store Connect successfully"
-                else
-                    log_error "Failed to upload app to App Store Connect"
-                    return 1
-                fi
-            else
-                log_error "No IPA file found for upload"
-                return 1
-            fi
+        if bash "$BUILD_SCRIPT"; then
+            log_success "Build phase completed successfully"
         else
-            log_error "Failed to download App Store Connect API key"
+            log_error "Build phase failed"
             return 1
         fi
     else
-        log_info "Skipping App Store Connect upload (TestFlight disabled or API key not provided)"
+        log_error "Build script not found: $BUILD_SCRIPT"
+        return 1
     fi
 }
 
-# Function to generate build artifacts summary
-generate_ios_build_summary() {
-    log_step "Generating iOS build artifacts summary"
+# Function to execute post-build phase
+execute_postbuild_phase() {
+    log_step "Executing Post-Build Phase"
     
-    local summary_file="$OUTPUT_DIR/ARTIFACTS_SUMMARY.txt"
+    if [ -f "$POST_BUILD_SCRIPT" ]; then
+        log_info "Running post-build script: $POST_BUILD_SCRIPT"
+        
+        # Set environment variables for post-build
+        export OUTPUT_DIR="output/ios"
+        export IPA_DIR="build/export"
+        export IS_TESTFLIGHT="$IS_TESTFLIGHT"
+        export PROFILE_TYPE="$PROFILE_TYPE"
+        export SEND_BUILD_NOTIFICATIONS="$SEND_BUILD_NOTIFICATIONS"
+        
+        if bash "$POST_BUILD_SCRIPT"; then
+            log_success "Post-build phase completed successfully"
+        else
+            log_error "Post-build phase failed"
+            return 1
+        fi
+    else
+        log_error "Post-build script not found: $POST_BUILD_SCRIPT"
+        return 1
+    fi
+}
+
+# Function to generate workflow summary
+generate_workflow_summary() {
+    log_step "Generating Workflow Summary"
+    
+    local summary_file="output/ios/WORKFLOW_SUMMARY.txt"
+    local start_time="${WORKFLOW_START_TIME:-$(date)}"
+    local end_time=$(date)
     
     cat > "$summary_file" << EOF
-🚀 iOS Build Summary
-====================
-Build Time: $(date)
-Workflow: ${WORKFLOW_ID:-Unknown}
-App Name: ${APP_NAME:-Unknown}
-Version: ${VERSION_NAME:-Unknown} (${VERSION_CODE:-Unknown})
-Bundle ID: ${BUNDLE_ID:-Unknown}
-Team ID: ${APPLE_TEAM_ID:-Unknown}
+🚀 iOS Workflow Summary - Enhanced Version
+==========================================
+Workflow Execution Time: $start_time to $end_time
+Workflow ID: ${WORKFLOW_ID:-Unknown}
+Overall Status: SUCCESS
 
-📱 Build Artifacts:
-$(ls -la "$OUTPUT_DIR"/*.ipa 2>/dev/null || echo "No IPA files found")
+📋 Phase Execution Summary:
+✅ Pre-Build Phase: COMPLETED
+✅ Build Phase: COMPLETED
+✅ Post-Build Phase: COMPLETED
 
-🔧 Build Configuration:
+🔧 Workflow Configuration:
 - Build Type: $BUILD_TYPE
-- Profile Type: ${PROFILE_TYPE:-Unknown}
-- Code Signing: ${CERT_P12_URL:+Configured}${CERT_P12_URL:-Not configured}
-- Firebase: ${FIREBASE_CONFIG_IOS:+Configured}${FIREBASE_CONFIG_IOS:-Not configured}
-- APNS: ${APNS_AUTH_KEY_URL:+Configured}${APNS_AUTH_KEY_URL:-Not configured}
-- TestFlight: ${IS_TESTFLIGHT:+Enabled}${IS_TESTFLIGHT:-Disabled}
+- Profile Type: $PROFILE_TYPE
+- Target-Only Mode: $TARGET_ONLY_MODE
+- Max Retries: $MAX_RETRIES
+- TestFlight Upload: $IS_TESTFLIGHT
+- Build Notifications: $SEND_BUILD_NOTIFICATIONS
 
-✅ Build Status: SUCCESS
+📱 Build Results:
+- Output Directory: output/ios
+- IPA Files: $(find output/ios -name "*.ipa" -type f 2>/dev/null | wc -l | tr -d ' ') files
+- Build Reports: $(find output/ios -name "*REPORT*.txt" -type f 2>/dev/null | wc -l | tr -d ' ') files
+
+🚀 Next Steps:
+1. Review build artifacts in output/ios/
+2. Validate IPA files for distribution
+3. Upload to TestFlight if enabled
+4. Submit to App Store when ready
+
+✅ Workflow completed successfully!
 EOF
 
-    log_success "iOS build summary generated: $summary_file"
+    log_success "Workflow summary generated: $summary_file"
+}
+
+# Function to handle workflow errors
+handle_workflow_error() {
+    local phase="$1"
+    local exit_code="$2"
+    
+    log_error "Workflow failed during $phase phase with exit code: $exit_code"
+    
+    # Generate error report
+    local error_file="output/ios/WORKFLOW_ERROR.txt"
+    mkdir -p "$(dirname "$error_file")"
+    
+    cat > "$error_file" << EOF
+❌ iOS Workflow Error Report
+============================
+Error Time: $(date)
+Failed Phase: $phase
+Exit Code: $exit_code
+Workflow ID: ${WORKFLOW_ID:-Unknown}
+
+🔍 Error Details:
+- Phase: $phase
+- Exit Code: $exit_code
+- Build Type: $BUILD_TYPE
+- Profile Type: $PROFILE_TYPE
+
+📋 Troubleshooting Steps:
+1. Check build logs for specific error messages
+2. Verify environment variables and configuration
+3. Check iOS project settings and certificates
+4. Review CocoaPods dependencies
+5. Validate code signing configuration
+
+📞 Support Information:
+- Workflow: ${WORKFLOW_ID:-Unknown}
+- Build: ${BUILD_NUMBER:-Unknown}
+- Commit: ${COMMIT_HASH:-Unknown}
+
+❌ Workflow Status: FAILED
+EOF
+
+    log_error "Error report generated: $error_file"
+    
+    # Send error notification if enabled
+    if [[ "$SEND_BUILD_NOTIFICATIONS" == "true" ]]; then
+        if [ -f "lib/scripts/utils/send_email.sh" ]; then
+            chmod +x lib/scripts/utils/send_email.sh
+            log_info "Sending error notification..."
+            ./lib/scripts/utils/send_email.sh --build-failure --phase "$phase" --exit-code "$exit_code" || true
+        fi
+    fi
+}
+
+# Function to cleanup workflow artifacts
+cleanup_workflow_artifacts() {
+    log_step "Cleaning up workflow artifacts"
+    
+    # Clean temporary files
+    rm -rf "ios/ExportOptions.plist" 2>/dev/null || true
+    rm -rf "build/export" 2>/dev/null || true
+    
+    # Keep archive for debugging if specified
+    if [[ "${KEEP_ARCHIVE_FOR_DEBUG:-false}" != "true" ]]; then
+        rm -rf "build/Runner.xcarchive" 2>/dev/null || true
+    else
+        log_info "Keeping archive for debugging purposes"
+    fi
+    
+    log_success "Workflow cleanup completed"
 }
 
 # Main execution function
 main() {
-    log_info "Starting iOS workflow build process"
+    local workflow_start_time=$(date)
+    export WORKFLOW_START_TIME="$workflow_start_time"
     
-    # Setup environment
-    setup_ios_environment
+    log_info "Starting iOS workflow execution at: $workflow_start_time"
     
-    # Setup certificates and profiles
-    setup_certificates
+    # Display workflow configuration
+    display_workflow_config
     
-    # Setup Firebase
-    setup_firebase_ios
-    
-    # Setup APNS
-    setup_apns
-    
-    # Setup feature integrations
-    log_step "Setting up feature integrations"
-    if bash "$(dirname "$0")/../utils/feature_integration.sh"; then
-        log_success "Feature integrations configured successfully"
-    else
-        log_warning "Feature integration had issues, but continuing with build"
+    # Validate script availability
+    if ! validate_scripts; then
+        log_error "Script validation failed"
+        exit 1
     fi
     
-    # Update iOS configuration
-    update_ios_config
+    # Execute pre-build phase
+    if ! execute_prebuild_phase; then
+        handle_workflow_error "pre-build" $?
+        exit 1
+    fi
     
-    # Clean previous builds
-    clean_ios_builds
+    # Execute build phase
+    if ! execute_build_phase; then
+        handle_workflow_error "build" $?
+        exit 1
+    fi
     
-    # Install CocoaPods dependencies
-    install_cocoapods
+    # Execute post-build phase
+    if ! execute_postbuild_phase; then
+        handle_workflow_error "post-build" $?
+        exit 1
+    fi
     
-    # Build Flutter iOS
-    build_flutter_ios
+    # Generate workflow summary
+    generate_workflow_summary
     
-    # Create Xcode archive
-    create_xcode_archive
+    # Cleanup workflow artifacts
+    cleanup_workflow_artifacts
     
-    # Export IPA
-    export_ipa
+    log_success "iOS workflow execution completed successfully!"
+    log_info "Workflow duration: $workflow_start_time to $(date)"
     
-    # Upload to App Store Connect if enabled
-    upload_to_app_store
-    
-    # Generate build summary
-    generate_ios_build_summary
-    
-    log_success "iOS workflow build process completed successfully"
+    # Display final status
+    echo ""
+    echo "🎉 iOS Workflow Completed Successfully!"
+    echo "📱 Build artifacts available in: output/ios/"
+    echo "📋 Summary reports generated"
+    echo "🚀 Ready for distribution!"
 }
 
 # Run main function if script is executed directly
