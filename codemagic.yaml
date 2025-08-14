@@ -552,25 +552,22 @@ workflows:
     scripts:
       - name: 🚀 iOS Workflow
         script: |
-            log_info "🔧 Making scripts executable..."
-            chmod +x lib/scripts/ios-workflow/*.sh 2>/dev/null || log_warning "Some scripts may not be executable"
-            chmod +x lib/scripts/utils/*.sh 2>/dev/null || log_warning "Some utils scripts may not be executable"
-            bash lib/scripts/ios-workflow/ios-workflow-main.sh
-            # log_info "🔧 Making scripts executable..."
-            # chmod +x lib/scripts/ios-workflow/*.sh 2>/dev/null || log_warning "Some scripts may not be executable"
-            # chmod +x lib/scripts/utils/*.sh 2>/dev/null || log_warning "Some utils scripts may not be executable"
-            # bash lib/scripts/ios-workflow/fixed_ios_workflow.sh
+            echo "🔧 Making old-scripts executable..."
+            chmod +x lib/old-scripts/ios-workflow/*.sh 2>/dev/null || echo "Some old-scripts may not be executable"
+            chmod +x lib/old-scripts/utils/*.sh 2>/dev/null || echo "Some old-scripts utils may not be executable"
+            echo "🚀 Using old-scripts ios-workflow-main.sh..."
+            bash lib/old-scripts/ios-workflow/ios-workflow-main.sh
     artifacts:
-      - build/export/*.ipa
+      - build/ios/output/*.ipa
       - output/ios/*.ipa
-      - build/Runner.xcarchive
-      - flutter_drive.log
-      - output/ios/
-      - build/ios/archive/
-      - ios/ExportOptions.plist
+      - build/ios/archive/Runner.xcarchive
       - output/ios/ARTIFACTS_SUMMARY.txt
       - flutter_build.log
       - xcodebuild_archive.log
+      - ios/ExportOptions.plist
+      - ios/Flutter/release.xcconfig
+      - assets/images/
+      - ios/Runner/GoogleService-Info.plist
     # App Store Connect publishing is handled via scripts
     # when the required environment variables are set in Codemagic
     # Required variables:

@@ -91,3 +91,7 @@ Modifying native project files only via scripts in the build workflow.
 Hardcoding workflow-provided variables.
 
 Manual edits in android/ or ios/ directories.
+
+// Variable validation is not required in scripts or Dart code, as validation is handled on the frontend.
+// Scripts and Dart code should proceed regardless of whether a variable is set or empty.
+// If a variable is missing or empty, the workflow must continue without throwing an error or halting the build.

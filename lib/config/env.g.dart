@@ -6,167 +6,243 @@ class EnvConfig {
   // ============================================================================
   // APP METADATA & IDENTIFICATION
   // ============================================================================
-  static const String projectId = String.fromEnvironment('PROJECT_ID', defaultValue: '');
-  static const String appName = String.fromEnvironment('APP_NAME', defaultValue: 'QuikApp');
-  static const String versionName = String.fromEnvironment('VERSION_NAME', defaultValue: '1.0.0');
-  static const String versionCode = String.fromEnvironment('VERSION_CODE', defaultValue: '1');
-  static const String workflowId = String.fromEnvironment('WORKFLOW_ID', defaultValue: '');
-  static const String appId = String.fromEnvironment('APP_ID', defaultValue: '');
-  static const String bundleId = String.fromEnvironment('BUNDLE_ID', defaultValue: '');
-  static const String packageName = String.fromEnvironment('PKG_NAME', defaultValue: '');
-  
+  static const String projectId =
+      String.fromEnvironment('PROJECT_ID', defaultValue: '');
+  static const String appName =
+      String.fromEnvironment('APP_NAME', defaultValue: 'QuikApp');
+  static const String versionName =
+      String.fromEnvironment('VERSION_NAME', defaultValue: '1.0.0');
+  static const String versionCode =
+      String.fromEnvironment('VERSION_CODE', defaultValue: '1');
+  static const String workflowId =
+      String.fromEnvironment('WORKFLOW_ID', defaultValue: '');
+  static const String appId =
+      String.fromEnvironment('APP_ID', defaultValue: '');
+  static const String bundleId =
+      String.fromEnvironment('BUNDLE_ID', defaultValue: '');
+  static const String packageName =
+      String.fromEnvironment('PKG_NAME', defaultValue: '');
+
   // ============================================================================
   // ORGANIZATION & CONTACT
   // ============================================================================
-  static const String orgName = String.fromEnvironment('ORG_NAME', defaultValue: '');
-  static const String webUrl = String.fromEnvironment('WEB_URL', defaultValue: '');
-  static const String emailId = String.fromEnvironment('EMAIL_ID', defaultValue: '');
-  static const String userName = String.fromEnvironment('USER_NAME', defaultValue: '');
-  
+  static const String orgName =
+      String.fromEnvironment('ORG_NAME', defaultValue: '');
+  static const String webUrl =
+      String.fromEnvironment('WEB_URL', defaultValue: '');
+  static const String emailId =
+      String.fromEnvironment('EMAIL_ID', defaultValue: '');
+  static const String userName =
+      String.fromEnvironment('USER_NAME', defaultValue: '');
+
   // ============================================================================
   // CORE FEATURE FLAGS
   // ============================================================================
-  static const bool isChatbot = bool.fromEnvironment('IS_CHATBOT', defaultValue: false);
-  static const bool isDomainUrl = bool.fromEnvironment('IS_DOMAIN_URL', defaultValue: false);
-  static const bool isSplash = bool.fromEnvironment('IS_SPLASH', defaultValue: false);
-  static const bool isPulldown = bool.fromEnvironment('IS_PULLDOWN', defaultValue: false);
-  static const bool isBottomMenu = bool.fromEnvironment('IS_BOTTOMMENU', defaultValue: false);
-  static const bool isLoadIndicator = bool.fromEnvironment('IS_LOAD_IND', defaultValue: false);
-  
+  static const bool isChatbot =
+      bool.fromEnvironment('IS_CHATBOT', defaultValue: false);
+  static const bool isDomainUrl =
+      bool.fromEnvironment('IS_DOMAIN_URL', defaultValue: false);
+  static const bool isSplash =
+      bool.fromEnvironment('IS_SPLASH', defaultValue: false);
+  static const bool isPulldown =
+      bool.fromEnvironment('IS_PULLDOWN', defaultValue: false);
+  static const bool isBottomMenu =
+      bool.fromEnvironment('IS_BOTTOMMENU', defaultValue: false);
+  static const bool isLoadIndicator =
+      bool.fromEnvironment('IS_LOAD_IND', defaultValue: false);
+
   // ============================================================================
   // PUSH NOTIFICATIONS & FIREBASE
   // ============================================================================
-  static const bool pushNotify = bool.fromEnvironment('PUSH_NOTIFY', defaultValue: false);
-  static const String firebaseConfigAndroid = String.fromEnvironment('FIREBASE_CONFIG_ANDROID', defaultValue: '');
-  static const String firebaseConfigIos = String.fromEnvironment('FIREBASE_CONFIG_IOS', defaultValue: '');
-  
+  static const bool pushNotify =
+      bool.fromEnvironment('PUSH_NOTIFY', defaultValue: false);
+  static const String firebaseConfigAndroid =
+      String.fromEnvironment('FIREBASE_CONFIG_ANDROID', defaultValue: '');
+  static const String firebaseConfigIos =
+      String.fromEnvironment('FIREBASE_CONFIG_IOS', defaultValue: '');
+
   // ============================================================================
   // OAUTH AUTHENTICATION
   // ============================================================================
-  static const bool isGoogleAuth = bool.fromEnvironment('IS_GOOGLE_AUTH', defaultValue: false);
-  static const bool isAppleAuth = bool.fromEnvironment('IS_APPLE_AUTH', defaultValue: false);
-  static const String appleTeamId = String.fromEnvironment('APPLE_TEAM_ID', defaultValue: '');
-  
+  static const bool isGoogleAuth =
+      bool.fromEnvironment('IS_GOOGLE_AUTH', defaultValue: false);
+  static const bool isAppleAuth =
+      bool.fromEnvironment('IS_APPLE_AUTH', defaultValue: false);
+  static const String appleTeamId =
+      String.fromEnvironment('APPLE_TEAM_ID', defaultValue: '');
+
   // ============================================================================
   // PERMISSIONS & CAPABILITIES
   // ============================================================================
-  static const bool isCamera = bool.fromEnvironment('IS_CAMERA', defaultValue: false);
-  static const bool isLocation = bool.fromEnvironment('IS_LOCATION', defaultValue: false);
+  static const bool isCamera =
+      bool.fromEnvironment('IS_CAMERA', defaultValue: false);
+  static const bool isLocation =
+      bool.fromEnvironment('IS_LOCATION', defaultValue: false);
   static const bool isMic = bool.fromEnvironment('IS_MIC', defaultValue: false);
-  static const bool isNotification = bool.fromEnvironment('IS_NOTIFICATION', defaultValue: false);
-  static const bool isContact = bool.fromEnvironment('IS_CONTACT', defaultValue: false);
-  static const bool isBiometric = bool.fromEnvironment('IS_BIOMETRIC', defaultValue: false);
-  static const bool isCalendar = bool.fromEnvironment('IS_CALENDAR', defaultValue: false);
-  static const bool isStorage = bool.fromEnvironment('IS_STORAGE', defaultValue: false);
-  
+  static const bool isNotification =
+      bool.fromEnvironment('IS_NOTIFICATION', defaultValue: false);
+  static const bool isContact =
+      bool.fromEnvironment('IS_CONTACT', defaultValue: false);
+  static const bool isBiometric =
+      bool.fromEnvironment('IS_BIOMETRIC', defaultValue: false);
+  static const bool isCalendar =
+      bool.fromEnvironment('IS_CALENDAR', defaultValue: false);
+  static const bool isStorage =
+      bool.fromEnvironment('IS_STORAGE', defaultValue: false);
+
   // ============================================================================
   // UI CUSTOMIZATION - LOGO & BRANDING
   // ============================================================================
-  static const String logoUrl = String.fromEnvironment('LOGO_URL', defaultValue: '');
-  static const String splashUrl = String.fromEnvironment('SPLASH_URL', defaultValue: '');
-  static const String splashBgUrl = String.fromEnvironment('SPLASH_BG_URL', defaultValue: '');
-  static const String splashBgColor = String.fromEnvironment('SPLASH_BG_COLOR', defaultValue: '#FFFFFF');
-  
+  static const String logoUrl =
+      String.fromEnvironment('LOGO_URL', defaultValue: '');
+  static const String splashUrl =
+      String.fromEnvironment('SPLASH_URL', defaultValue: '');
+  static const String splashBgUrl =
+      String.fromEnvironment('SPLASH_BG_URL', defaultValue: '');
+  static const String splashBgColor =
+      String.fromEnvironment('SPLASH_BG_COLOR', defaultValue: '#FFFFFF');
+
   // ============================================================================
   // SPLASH SCREEN CUSTOMIZATION
   // ============================================================================
-  static const String splashTagline = String.fromEnvironment('SPLASH_TAGLINE', defaultValue: '');
-  static const String splashTaglineColor = String.fromEnvironment('SPLASH_TAGLINE_COLOR', defaultValue: '#000000');
-  static const String splashTaglineFont = String.fromEnvironment('SPLASH_TAGLINE_FONT', defaultValue: 'Roboto');
-  static const String splashTaglineSize = String.fromEnvironment('SPLASH_TAGLINE_SIZE', defaultValue: '24');
-  static const bool splashTaglineBold = bool.fromEnvironment('SPLASH_TAGLINE_BOLD', defaultValue: false);
-  static const bool splashTaglineItalic = bool.fromEnvironment('SPLASH_TAGLINE_ITALIC', defaultValue: false);
-  static const String splashAnimation = String.fromEnvironment('SPLASH_ANIMATION', defaultValue: 'fade');
-  static const String splashDuration = String.fromEnvironment('SPLASH_DURATION', defaultValue: '3');
-  
+  static const String splashTagline =
+      String.fromEnvironment('SPLASH_TAGLINE', defaultValue: '');
+  static const String splashTaglineColor =
+      String.fromEnvironment('SPLASH_TAGLINE_COLOR', defaultValue: '#000000');
+  static const String splashTaglineFont =
+      String.fromEnvironment('SPLASH_TAGLINE_FONT', defaultValue: 'Roboto');
+  static const String splashTaglineSize =
+      String.fromEnvironment('SPLASH_TAGLINE_SIZE', defaultValue: '24');
+  static const bool splashTaglineBold =
+      bool.fromEnvironment('SPLASH_TAGLINE_BOLD', defaultValue: false);
+  static const bool splashTaglineItalic =
+      bool.fromEnvironment('SPLASH_TAGLINE_ITALIC', defaultValue: false);
+  static const String splashAnimation =
+      String.fromEnvironment('SPLASH_ANIMATION', defaultValue: 'fade');
+  static const String splashDuration =
+      String.fromEnvironment('SPLASH_DURATION', defaultValue: '3');
+
   // ============================================================================
   // BOTTOM NAVIGATION BAR CUSTOMIZATION
   // ============================================================================
-  static const String bottomMenuItems = String.fromEnvironment('BOTTOMMENU_ITEMS', defaultValue: '[]');
-  static const String bottomMenuBgColor = String.fromEnvironment('BOTTOMMENU_BG_COLOR', defaultValue: '#FFFFFF');
-  static const String bottomMenuIconColor = String.fromEnvironment('BOTTOMMENU_ICON_COLOR', defaultValue: '#000000');
-  static const String bottomMenuTextColor = String.fromEnvironment('BOTTOMMENU_TEXT_COLOR', defaultValue: '#000000');
-  static const String bottomMenuFont = String.fromEnvironment('BOTTOMMENU_FONT', defaultValue: 'Roboto');
-  static const String bottomMenuFontSize = String.fromEnvironment('BOTTOMMENU_FONT_SIZE', defaultValue: '12');
-  static const bool bottomMenuFontBold = bool.fromEnvironment('BOTTOMMENU_FONT_BOLD', defaultValue: false);
-  static const bool bottomMenuFontItalic = bool.fromEnvironment('BOTTOMMENU_FONT_ITALIC', defaultValue: false);
-  static const String bottomMenuActiveTabColor = String.fromEnvironment('BOTTOMMENU_ACTIVE_TAB_COLOR', defaultValue: '#007AFF');
-  static const String bottomMenuIconPosition = String.fromEnvironment('BOTTOMMENU_ICON_POSITION', defaultValue: 'above');
-  
+  static const String bottomMenuItems =
+      String.fromEnvironment('BOTTOMMENU_ITEMS', defaultValue: '[]');
+  static const String bottomMenuBgColor =
+      String.fromEnvironment('BOTTOMMENU_BG_COLOR', defaultValue: '#FFFFFF');
+  static const String bottomMenuIconColor =
+      String.fromEnvironment('BOTTOMMENU_ICON_COLOR', defaultValue: '#000000');
+  static const String bottomMenuTextColor =
+      String.fromEnvironment('BOTTOMMENU_TEXT_COLOR', defaultValue: '#000000');
+  static const String bottomMenuFont =
+      String.fromEnvironment('BOTTOMMENU_FONT', defaultValue: 'Roboto');
+  static const String bottomMenuFontSize =
+      String.fromEnvironment('BOTTOMMENU_FONT_SIZE', defaultValue: '12');
+  static const bool bottomMenuFontBold =
+      bool.fromEnvironment('BOTTOMMENU_FONT_BOLD', defaultValue: false);
+  static const bool bottomMenuFontItalic =
+      bool.fromEnvironment('BOTTOMMENU_FONT_ITALIC', defaultValue: false);
+  static const String bottomMenuActiveTabColor = String.fromEnvironment(
+      'BOTTOMMENU_ACTIVE_TAB_COLOR',
+      defaultValue: '#007AFF');
+  static const String bottomMenuIconPosition =
+      String.fromEnvironment('BOTTOMMENU_ICON_POSITION', defaultValue: 'above');
+
   // ============================================================================
   // PULL TO REFRESH & LOADING INDICATORS
   // ============================================================================
-  static const bool enablePullToRefresh = bool.fromEnvironment('IS_PULLDOWN', defaultValue: false);
-  static const bool showLoadingIndicators = bool.fromEnvironment('IS_LOAD_IND', defaultValue: false);
-  
+  static const bool enablePullToRefresh =
+      bool.fromEnvironment('IS_PULLDOWN', defaultValue: false);
+  static const bool showLoadingIndicators =
+      bool.fromEnvironment('IS_LOAD_IND', defaultValue: false);
+
   // ============================================================================
   // iOS SPECIFIC CONFIGURATION
   // ============================================================================
-  static const String apnsKeyId = String.fromEnvironment('APNS_KEY_ID', defaultValue: '');
-  static const String apnsAuthKeyUrl = String.fromEnvironment('APNS_AUTH_KEY_URL', defaultValue: '');
-  
+  static const String apnsKeyId =
+      String.fromEnvironment('APNS_KEY_ID', defaultValue: '');
+  static const String apnsAuthKeyUrl =
+      String.fromEnvironment('APNS_AUTH_KEY_URL', defaultValue: '');
+
   // ============================================================================
   // EMAIL NOTIFICATION SYSTEM
   // ============================================================================
-  static const bool enableEmailNotifications = bool.fromEnvironment('ENABLE_EMAIL_NOTIFICATIONS', defaultValue: false);
-  static const String emailSmtpServer = String.fromEnvironment('EMAIL_SMTP_SERVER', defaultValue: '');
-  static const String emailSmtpPort = String.fromEnvironment('EMAIL_SMTP_PORT', defaultValue: '');
-  static const String emailSmtpUser = String.fromEnvironment('EMAIL_SMTP_USER', defaultValue: '');
-  static const String emailSmtpPass = String.fromEnvironment('EMAIL_SMTP_PASS', defaultValue: '');
-  
+  static const bool enableEmailNotifications =
+      bool.fromEnvironment('ENABLE_EMAIL_NOTIFICATIONS', defaultValue: false);
+  static const String emailSmtpServer =
+      String.fromEnvironment('EMAIL_SMTP_SERVER', defaultValue: '');
+  static const String emailSmtpPort =
+      String.fromEnvironment('EMAIL_SMTP_PORT', defaultValue: '');
+  static const String emailSmtpUser =
+      String.fromEnvironment('EMAIL_SMTP_USER', defaultValue: '');
+  static const String emailSmtpPass =
+      String.fromEnvironment('EMAIL_SMTP_PASS', defaultValue: '');
+
   // ============================================================================
   // BUILD INFORMATION & METADATA
   // ============================================================================
-  static const String buildTime = String.fromEnvironment('BUILD_TIME', defaultValue: '');
-  static const String buildNumber = String.fromEnvironment('BUILD_NUMBER', defaultValue: '');
-  static const String gitBranch = String.fromEnvironment('BRANCH', defaultValue: '');
-  static const String gitCommit = String.fromEnvironment('COMMIT', defaultValue: '');
-  
+  static const String buildTime =
+      String.fromEnvironment('BUILD_TIME', defaultValue: '');
+  static const String buildNumber =
+      String.fromEnvironment('BUILD_NUMBER', defaultValue: '');
+  static const String gitBranch =
+      String.fromEnvironment('BRANCH', defaultValue: '');
+  static const String gitCommit =
+      String.fromEnvironment('COMMIT', defaultValue: '');
+
   // ============================================================================
   // HELPER METHODS & COMPUTED PROPERTIES
   // ============================================================================
-  
+
   // Build Environment Detection
-  static bool get isProduction => workflowId.contains('publish') || workflowId.contains('production');
-  static bool get isDevelopment => workflowId.contains('free') || workflowId.contains('development');
+  static bool get isProduction =>
+      workflowId.contains('publish') || workflowId.contains('production');
+  static bool get isDevelopment =>
+      workflowId.contains('free') || workflowId.contains('development');
   static bool get isTestFlight => workflowId.contains('ios') && isProduction;
-  
+
   // Feature Validation
-  static bool get hasValidFirebaseConfig => 
-    firebaseConfigAndroid.isNotEmpty || firebaseConfigIos.isNotEmpty;
-    
-  static bool get hasValidSigningConfig => 
-    (workflowId.contains('android') && packageName.isNotEmpty) ||
-    (workflowId.contains('ios') && bundleId.isNotEmpty && appleTeamId.isNotEmpty);
-  
+  static bool get hasValidFirebaseConfig =>
+      firebaseConfigAndroid.isNotEmpty || firebaseConfigIos.isNotEmpty;
+
+  static bool get hasValidSigningConfig =>
+      (workflowId.contains('android') && packageName.isNotEmpty) ||
+      (workflowId.contains('ios') &&
+          bundleId.isNotEmpty &&
+          appleTeamId.isNotEmpty);
+
   // Push Notification Validation
   static bool get hasValidPushNotificationConfig =>
-    pushNotify && hasValidFirebaseConfig;
-  
+      pushNotify && hasValidFirebaseConfig;
+
   // Authentication Validation
-  static bool get hasValidAuthConfig =>
-    isGoogleAuth || isAppleAuth;
-  
+  static bool get hasValidAuthConfig => isGoogleAuth || isAppleAuth;
+
   // UI Customization Validation
   static bool get hasValidUICustomization =>
-    logoUrl.isNotEmpty || splashUrl.isNotEmpty || bottomMenuItems != '[]';
-  
+      logoUrl.isNotEmpty || splashUrl.isNotEmpty || bottomMenuItems != '[]';
+
   // Email System Validation
   static bool get hasValidEmailConfig =>
-    enableEmailNotifications && 
-    emailSmtpServer.isNotEmpty && 
-    emailSmtpUser.isNotEmpty && 
-    emailSmtpPass.isNotEmpty;
-  
+      enableEmailNotifications &&
+      emailSmtpServer.isNotEmpty &&
+      emailSmtpUser.isNotEmpty &&
+      emailSmtpPass.isNotEmpty;
+
   // Permission Summary
   static bool get hasAnyPermissions =>
-    isCamera || isLocation || isMic || isNotification || 
-    isContact || isBiometric || isCalendar || isStorage;
-  
+      isCamera ||
+      isLocation ||
+      isMic ||
+      isNotification ||
+      isContact ||
+      isBiometric ||
+      isCalendar ||
+      isStorage;
+
   // ============================================================================
   // CONFIGURATION SUMMARY METHODS
   // ============================================================================
-  
+
   // Get all enabled features as a list
   static List<String> get enabledFeatures {
     final features = <String>[];
@@ -190,7 +266,7 @@ class EnvConfig {
     if (enableEmailNotifications) features.add('Email Notifications');
     return features;
   }
-  
+
   // Get configuration status
   static Map<String, bool> get configurationStatus {
     return {
@@ -203,13 +279,15 @@ class EnvConfig {
       'Code Signing': hasValidSigningConfig,
     };
   }
-  
+
   // Get missing configurations
   static List<String> get missingConfigurations {
     final missing = <String>[];
-    if (!hasValidFirebaseConfig && pushNotify) missing.add('Firebase Configuration');
+    if (!hasValidFirebaseConfig && pushNotify)
+      missing.add('Firebase Configuration');
     if (!hasValidAuthConfig) missing.add('OAuth Configuration');
-    if (!hasValidEmailConfig && enableEmailNotifications) missing.add('Email Configuration');
+    if (!hasValidEmailConfig && enableEmailNotifications)
+      missing.add('Email Configuration');
     if (!hasValidSigningConfig) missing.add('Code Signing');
     return missing;
   }
