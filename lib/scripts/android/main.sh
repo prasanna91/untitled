@@ -232,20 +232,49 @@ EOF
             log_success "Gradle wrapper script generated successfully"
         else
             log_warning "Gradle wrapper JAR not found at $gradle_wrapper_jar"
-            log_info "Attempting to download Gradle wrapper..."
+            log_info "Attempting to use Flutter's built-in Gradle wrapper..."
+            
+            # Try Flutter's built-in Gradle wrapper first
+            if try_flutter_gradle_wrapper; then
+                log_success "Successfully set up Gradle wrapper from Flutter"
+                return 0
+            fi
+            
+            log_info "Flutter wrapper not available, attempting to download Gradle wrapper..."
             
             # Try to download gradle wrapper
             local gradle_wrapper_dir="$android_dir/gradle/wrapper"
             mkdir -p "$gradle_wrapper_dir"
             
-            # Download gradle-wrapper.jar from Maven Central
-            local gradle_version="8.0"
-            local wrapper_url="https://repo1.maven.org/maven2/org/gradle/gradle-wrapper/$gradle_version/gradle-wrapper-$gradle_version.jar"
+            # Try multiple Gradle versions and sources for better reliability
+            local gradle_versions=("8.0" "7.6.3" "7.6.2" "7.6.1")
+            local download_success=false
             
-            if curl -L -o "$gradle_wrapper_jar" "$wrapper_url"; then
-                log_success "Downloaded gradle-wrapper.jar from $wrapper_url"
+            for gradle_version in "${gradle_versions[@]}"; do
+                log_info "Trying Gradle version $gradle_version..."
                 
-                # Create gradle-wrapper.properties
+                # Try Maven Central first
+                local wrapper_url="https://repo1.maven.org/maven2/org/gradle/gradle-wrapper/$gradle_version/gradle-wrapper-$gradle_version.jar"
+                
+                if curl -L -o "$gradle_wrapper_jar" "$wrapper_url" --connect-timeout 30 --max-time 120; then
+                    log_info "Downloaded gradle-wrapper.jar from Maven Central"
+                    
+                    # Validate the JAR file
+                    if java -cp "$gradle_wrapper_jar" org.gradle.wrapper.GradleWrapperMain --version >/dev/null 2>&1; then
+                        log_success "Gradle wrapper JAR validated successfully (version $gradle_version)"
+                        download_success=true
+                        break
+                    else
+                        log_warning "Downloaded JAR appears corrupted, trying next version..."
+                        rm -f "$gradle_wrapper_jar"
+                    fi
+                else
+                    log_warning "Failed to download from Maven Central, trying next version..."
+                fi
+            done
+            
+            if [[ "$download_success" == "true" ]]; then
+                # Create gradle-wrapper.properties with the successful version
                 cat > "$gradle_wrapper_dir/gradle-wrapper.properties" << EOF
 distributionBase=GRADLE_USER_HOME
 distributionPath=wrapper/dists
@@ -445,21 +474,60 @@ EOF
                 chmod +x "$gradlew"
                 log_success "Gradle wrapper downloaded and script generated successfully"
             else
-                log_error "Failed to download gradle-wrapper.jar from $wrapper_url"
-                log_error "Cannot generate gradlew script without the wrapper JAR"
-                log_error "Android directory contents:"
-                ls -la "$android_dir" || true
-                return 1
+                log_error "Failed to download valid gradle-wrapper.jar from all sources"
+                log_warning "Attempting to use system Gradle as fallback..."
+                
+                # Check if system Gradle is available
+                if check_system_gradle; then
+                    log_info "System Gradle available, continuing without wrapper"
+                    return 0  # Allow the build to continue with system Gradle
+                else
+                    log_error "No Gradle available - neither wrapper nor system installation"
+                    log_error "Cannot proceed with Android build"
+                    log_error "Android directory contents:"
+                    ls -la "$android_dir" || true
+                    return 1
+                fi
             fi
         fi
     fi
     
-    # Make gradlew executable
-    chmod +x "$gradlew" 2>/dev/null || log_warning "Could not make gradlew executable"
-    
-    log_success "Android project structure verified"
-    log_info "Android directory: $android_dir"
-    log_info "Gradle wrapper: $gradlew"
+    # Make gradlew executable if it exists
+    if [[ -f "$gradlew" ]]; then
+        chmod +x "$gradlew" 2>/dev/null || log_warning "Could not make gradlew executable"
+        
+        # Test if the gradlew script actually works
+        log_info "Testing Gradle wrapper functionality..."
+        if cd "$android_dir" && ./gradlew --version >/dev/null 2>&1; then
+            log_success "Gradle wrapper test passed"
+            cd - > /dev/null
+        else
+            log_warning "Gradle wrapper test failed, trying to regenerate..."
+            cd - > /dev/null
+            rm -f "$gradlew"
+            # Try to regenerate the wrapper
+            if try_flutter_gradle_wrapper; then
+                log_success "Successfully regenerated Gradle wrapper from Flutter"
+            else
+                log_error "Failed to regenerate working Gradle wrapper"
+                return 1
+            fi
+        fi
+        
+        log_success "Android project structure verified with Gradle wrapper"
+        log_info "Android directory: $android_dir"
+        log_info "Gradle wrapper: $gradlew"
+    else
+        # Check if system Gradle is available as fallback
+        if check_system_gradle; then
+            log_success "Android project structure verified with system Gradle"
+            log_info "Android directory: $android_dir"
+            log_info "Using system Gradle: $(gradle --version | head -1)"
+        else
+            log_error "No Gradle available - neither wrapper nor system installation"
+            return 1
+        fi
+    fi
 }
 
 # Function to setup build environment
@@ -580,6 +648,47 @@ check_system_gradle() {
         log_warning "System Gradle not found in PATH"
         return 1
     fi
+}
+
+# Function to try to use Flutter's built-in Gradle wrapper
+try_flutter_gradle_wrapper() {
+    log_info "Attempting to use Flutter's built-in Gradle wrapper..."
+    
+    # Check if Flutter has a built-in Gradle wrapper
+    local flutter_gradle_dir="$HOME/.pub-cache/bin/cache/flutter"
+    if [[ -d "$flutter_gradle_dir" ]]; then
+        # Look for Gradle wrapper in Flutter cache
+        local flutter_gradlew=$(find "$flutter_gradle_dir" -name "gradlew" -type f 2>/dev/null | head -1)
+        if [[ -n "$flutter_gradlew" ]]; then
+            log_info "Found Flutter Gradle wrapper at: $flutter_gradlew"
+            # Copy it to our Android directory
+            cp "$flutter_gradlew" "$android_dir/gradlew"
+            chmod +x "$android_dir/gradlew"
+            
+            # Also look for gradle-wrapper.jar
+            local flutter_wrapper_jar=$(find "$flutter_gradle_dir" -name "gradle-wrapper.jar" -type f 2>/dev/null | head -1)
+            if [[ -n "$flutter_wrapper_jar" ]]; then
+                log_info "Found Flutter gradle-wrapper.jar at: $flutter_wrapper_jar"
+                mkdir -p "$android_dir/gradle/wrapper"
+                cp "$flutter_wrapper_jar" "$android_dir/gradle/wrapper/gradle-wrapper.jar"
+                
+                # Create gradle-wrapper.properties
+                cat > "$android_dir/gradle/wrapper/gradle-wrapper.properties" << EOF
+distributionBase=GRADLE_USER_HOME
+distributionPath=wrapper/dists
+distributionUrl=https\://services.gradle.org/distributions/gradle-7.6.3-bin.zip
+zipStoreBase=GRADLE_USER_HOME
+zipStorePath=wrapper/dists
+EOF
+                
+                log_success "Successfully copied Flutter's Gradle wrapper"
+                return 0
+            fi
+        fi
+    fi
+    
+    log_warning "Flutter's built-in Gradle wrapper not found"
+    return 1
 }
 
 # Function to clean previous builds
