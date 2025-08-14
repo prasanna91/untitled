@@ -992,29 +992,32 @@ create_android_config() {
                 log_warning "Flutter command not found in PATH"
             fi
             
-            # Final fallback: try common Flutter SDK locations
-            if [[ -z "$flutter_sdk_path" ]]; then
-                log_info "Trying common Flutter SDK locations as final fallback..."
-                local common_flutter_paths=(
-                    "/usr/local/flutter"
-                    "/opt/flutter"
-                    "$HOME/flutter"
-                    "/usr/lib/flutter"
-                    "/opt/flutter-linux"
-                )
-                
-                for path in "${common_flutter_paths[@]}"; do
-                    if [[ -d "$path" && -f "$path/bin/flutter" ]]; then
-                        flutter_sdk_path="$path"
-                        log_success "Found Flutter SDK in common location: $flutter_sdk_path"
-                        break
-                    fi
-                done
-                
+                            # Final fallback: try common Flutter SDK locations
                 if [[ -z "$flutter_sdk_path" ]]; then
-                    log_warning "No Flutter SDK found in common locations"
+                    log_info "Trying common Flutter SDK locations as final fallback..."
+                    local common_flutter_paths=(
+                        "/usr/local/flutter"
+                        "/opt/flutter"
+                        "$HOME/flutter"
+                        "/usr/lib/flutter"
+                        "/opt/flutter-linux"
+                        "/Users/builder/.config/flutter"  # Specific path found in logs
+                        "$HOME/.config/flutter"           # User config directory
+                        "$HOME/.local/share/flutter"      # User local share
+                    )
+                    
+                    for path in "${common_flutter_paths[@]}"; do
+                        if [[ -d "$path" && -f "$path/bin/flutter" ]]; then
+                            flutter_sdk_path="$path"
+                            log_success "Found Flutter SDK in common location: $flutter_sdk_path"
+                            break
+                        fi
+                    done
+                    
+                    if [[ -z "$flutter_sdk_path" ]]; then
+                        log_warning "No Flutter SDK found in common locations"
+                    fi
                 fi
-            fi
             
             log_info "Creating local.properties file at: $local_props"
             
@@ -1073,15 +1076,43 @@ EOF
                         log_error "Failed to add emergency Flutter SDK path"
                     fi
                 else
-                    log_error "No Flutter SDK found in any location - build will likely fail"
-                    log_error "Available Flutter-related paths:"
-                    find /usr/local /opt /usr/lib "$HOME" -name "*flutter*" -type d 2>/dev/null | head -10 | while read -r path; do
-                        log_info "  $path"
-                    done
+                    log_warning "No Flutter SDK found in common locations"
+                    log_info "Searching for any Flutter-related paths..."
+                    
+                    # Search more broadly for Flutter installations
+                    local found_flutter_paths=()
+                    while IFS= read -r -d '' path; do
+                        if [[ -d "$path" && -f "$path/bin/flutter" ]]; then
+                            found_flutter_paths+=("$path")
+                        fi
+                    done < <(find /usr/local /opt /usr/lib "$HOME" /Users -name "*flutter*" -type d 2>/dev/null | head -20)
+                    
+                    if [[ ${#found_flutter_paths[@]} -gt 0 ]]; then
+                        log_info "Found potential Flutter SDK paths:"
+                        for path in "${found_flutter_paths[@]}"; do
+                            log_info "  $path"
+                        done
+                        
+                        # Use the first valid Flutter SDK path found
+                        local first_valid_path="${found_flutter_paths[0]}"
+                        if [[ -d "$first_valid_path" && -f "$first_valid_path/bin/flutter" ]]; then
+                            log_warning "Using first found Flutter SDK path: $first_valid_path"
+                            flutter_sdk_path="$first_valid_path"
+                        fi
+                    else
+                        log_warning "No Flutter SDK found in any location"
+                        log_warning "Build may fail if Flutter SDK is not accessible"
+                    fi
                 fi
                 
-                log_success "Created local.properties with SDK path: $sdk_path"
-                log_warning "Flutter SDK path not found - may cause build issues"
+                # Always continue, even if Flutter SDK is not found
+                if [[ -n "$flutter_sdk_path" ]]; then
+                    log_success "Created local.properties with SDK path: $sdk_path and Flutter SDK: $flutter_sdk_path"
+                else
+                    log_success "Created local.properties with SDK path: $sdk_path"
+                    log_warning "Flutter SDK path not found - build may fail"
+                    log_info "Attempting to continue with build..."
+                fi
             fi
                 
                 # Verify the file was created successfully
@@ -1194,19 +1225,37 @@ EOF
         cat "$local_props" | while read -r line; do
             log_info "  $line"
         done
+        
+        # Check if flutter.sdk is missing and add it if needed
+        if ! grep -q "^flutter.sdk=" "$local_props"; then
+            log_warning "flutter.sdk is missing from local.properties - adding emergency fallback"
+            
+            # Try to find Flutter SDK in the specific path from logs
+            local emergency_flutter_path="/Users/builder/.config/flutter"
+            if [[ -d "$emergency_flutter_path" && -f "$emergency_flutter_path/bin/flutter" ]]; then
+                log_info "Found Flutter SDK in emergency path: $emergency_flutter_path"
+                if echo "flutter.sdk=$emergency_flutter_path" >> "$local_props"; then
+                    log_success "Added emergency flutter.sdk path: $emergency_flutter_path"
+                else
+                    log_error "Failed to add emergency flutter.sdk path"
+                fi
+            else
+                log_warning "Emergency Flutter SDK path not accessible: $emergency_flutter_path"
+            fi
+        fi
     else
         log_error "local.properties file was not created successfully"
         log_error "Attempting emergency fallback creation..."
         
-        # Emergency fallback: create a minimal local.properties
+        # Emergency fallback: create a minimal local.properties with the path from logs
         if cat > "$local_props" << EOF
 # Emergency fallback local.properties
 sdk.dir=/usr/local/share/android-sdk
-flutter.sdk=/usr/local/flutter
+flutter.sdk=/Users/builder/.config/flutter
 EOF
         then
-            log_warning "Emergency fallback local.properties created"
-            log_info "This may need manual adjustment for your environment"
+            log_warning "Emergency fallback local.properties created with path from logs"
+            log_info "This should work for the current build environment"
         else
             log_error "Failed to create emergency fallback local.properties"
             return 1
