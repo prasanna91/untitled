@@ -1112,6 +1112,26 @@ EOF
                     log_success "Created local.properties with SDK path: $sdk_path"
                     log_warning "Flutter SDK path not found - build may fail"
                     log_info "Attempting to continue with build..."
+                    
+                    # Try to add flutter.sdk to the file we just created
+                    log_info "Attempting to add flutter.sdk to newly created local.properties..."
+                    local emergency_paths=(
+                        "/Users/builder/.config/flutter"
+                        "/usr/local/flutter"
+                        "/opt/flutter"
+                        "$HOME/flutter"
+                        "/usr/lib/flutter"
+                    )
+                    
+                    for emergency_path in "${emergency_paths[@]}"; do
+                        if [[ -d "$emergency_path" && -f "$emergency_path/bin/flutter" ]]; then
+                            log_info "Found Flutter SDK in emergency path: $emergency_path"
+                            if echo "flutter.sdk=$emergency_path" >> "$local_props"; then
+                                log_success "Added flutter.sdk to local.properties: $emergency_path"
+                                break
+                            fi
+                        fi
+                    done
                 fi
             fi
                 
@@ -1123,25 +1143,85 @@ EOF
                         log_info "  $line"
                     done
                     
-                    # Verify flutter.sdk is present
-                    if grep -q "^flutter.sdk=" "$local_props"; then
-                        local actual_flutter_sdk=$(grep "^flutter.sdk=" "$local_props" | cut -d'=' -f2)
-                        log_success "flutter.sdk verified in local.properties: $actual_flutter_sdk"
-                    else
-                        log_error "flutter.sdk line is missing from local.properties!"
-                        log_error "This will cause the build to fail"
-                        return 1
-                    fi
+                                    # Verify flutter.sdk is present
+                if grep -q "^flutter.sdk=" "$local_props"; then
+                    local actual_flutter_sdk=$(grep "^flutter.sdk=" "$local_props" | cut -d'=' -f2)
+                    log_success "flutter.sdk verified in local.properties: $actual_flutter_sdk"
+                else
+                    log_warning "flutter.sdk line is missing from local.properties!"
+                    log_warning "Attempting to add it now..."
                     
-                    # Verify sdk.dir is present
-                    if grep -q "^sdk.dir=" "$local_props"; then
-                        local actual_sdk_dir=$(grep "^sdk.dir=" "$local_props" | cut -d'=' -f2)
-                        log_success "sdk.dir verified in local.properties: $actual_sdk_dir"
+                    # Try to add flutter.sdk using emergency fallback
+                    local emergency_flutter_path="/Users/builder/.config/flutter"
+                    if [[ -d "$emergency_flutter_path" && -f "$emergency_flutter_path/bin/flutter" ]]; then
+                        log_info "Found Flutter SDK in emergency path: $emergency_flutter_path"
+                        if echo "flutter.sdk=$emergency_flutter_path" >> "$local_props"; then
+                            log_success "Added emergency flutter.sdk path: $emergency_flutter_path"
+                            
+                            # Verify it was added successfully
+                            if grep -q "^flutter.sdk=" "$local_props"; then
+                                local actual_flutter_sdk=$(grep "^flutter.sdk=" "$local_props" | cut -d'=' -f2)
+                                log_success "flutter.sdk now verified in local.properties: $actual_flutter_sdk"
+                            else
+                                log_error "Failed to add flutter.sdk even after emergency fallback"
+                                log_warning "Build may fail, but continuing anyway..."
+                            fi
+                        else
+                            log_error "Failed to add emergency flutter.sdk path"
+                            log_warning "Build may fail, but continuing anyway..."
+                        fi
                     else
-                        log_error "sdk.dir line is missing from local.properties!"
-                        log_error "This will cause the build to fail"
-                        return 1
+                        log_warning "Emergency Flutter SDK path not accessible: $emergency_flutter_path"
+                        log_warning "Build may fail, but continuing anyway..."
                     fi
+                fi
+                    
+                                    # Verify sdk.dir is present
+                if grep -q "^sdk.dir=" "$local_props"; then
+                    local actual_sdk_dir=$(grep "^sdk.dir=" "$local_props" | cut -d'=' -f2)
+                    log_success "sdk.dir verified in local.properties: $actual_sdk_dir"
+                else
+                    log_error "sdk.dir line is missing from local.properties!"
+                    log_error "This will cause the build to fail"
+                    return 1
+                fi
+                
+                # Final verification and fallback for flutter.sdk
+                if ! grep -q "^flutter.sdk=" "$local_props"; then
+                    log_warning "Final attempt to add flutter.sdk to local.properties..."
+                    
+                    # Try multiple fallback paths
+                    local fallback_paths=(
+                        "/Users/builder/.config/flutter"
+                        "/usr/local/flutter"
+                        "/opt/flutter"
+                        "$HOME/flutter"
+                        "/usr/lib/flutter"
+                        "/Users/builder/.local/share/flutter"
+                        "/Users/builder/.pub-cache/bin/flutter"
+                    )
+                    
+                    local flutter_added=false
+                    for fallback_path in "${fallback_paths[@]}"; do
+                        if [[ -d "$fallback_path" && -f "$fallback_path/bin/flutter" ]]; then
+                            log_info "Found Flutter SDK in fallback path: $fallback_path"
+                            if echo "flutter.sdk=$fallback_path" >> "$local_props"; then
+                                log_success "Successfully added flutter.sdk: $fallback_path"
+                                flutter_added=true
+                                break
+                            fi
+                        fi
+                    done
+                    
+                    if [[ "$flutter_added" == false ]]; then
+                        log_warning "Could not add flutter.sdk to local.properties"
+                        log_warning "Build may fail, but continuing anyway..."
+                        log_info "Final local.properties contents:"
+                        cat "$local_props" | while read -r line; do
+                            log_info "  $line"
+                        done
+                    fi
+                fi
                 else
                     log_error "local.properties file was not created"
                     return 1
@@ -1226,23 +1306,51 @@ EOF
             log_info "  $line"
         done
         
-        # Check if flutter.sdk is missing and add it if needed
-        if ! grep -q "^flutter.sdk=" "$local_props"; then
-            log_warning "flutter.sdk is missing from local.properties - adding emergency fallback"
-            
-            # Try to find Flutter SDK in the specific path from logs
-            local emergency_flutter_path="/Users/builder/.config/flutter"
-            if [[ -d "$emergency_flutter_path" && -f "$emergency_flutter_path/bin/flutter" ]]; then
-                log_info "Found Flutter SDK in emergency path: $emergency_flutter_path"
-                if echo "flutter.sdk=$emergency_flutter_path" >> "$local_props"; then
-                    log_success "Added emergency flutter.sdk path: $emergency_flutter_path"
-                else
-                    log_error "Failed to add emergency flutter.sdk path"
+                        # Check if flutter.sdk is missing and add it if needed
+                if ! grep -q "^flutter.sdk=" "$local_props"; then
+                    log_warning "flutter.sdk is missing from local.properties - adding emergency fallback"
+                    
+                    # Try to find Flutter SDK in the specific path from logs
+                    local emergency_flutter_path="/Users/builder/.config/flutter"
+                    if [[ -d "$emergency_flutter_path" && -f "$emergency_flutter_path/bin/flutter" ]]; then
+                        log_info "Found Flutter SDK in emergency path: $emergency_flutter_path"
+                        if echo "flutter.sdk=$emergency_flutter_path" >> "$local_props"; then
+                            log_success "Added emergency flutter.sdk path: $emergency_flutter_path"
+                        else
+                            log_error "Failed to add emergency flutter.sdk path"
+                        fi
+                    else
+                        log_warning "Emergency Flutter SDK path not accessible: $emergency_flutter_path"
+                        log_warning "Trying alternative emergency paths..."
+                        
+                        # Try alternative emergency paths
+                        local alt_emergency_paths=(
+                            "/usr/local/flutter"
+                            "/opt/flutter"
+                            "$HOME/flutter"
+                            "/usr/lib/flutter"
+                        )
+                        
+                        local found_alt_path=""
+                        for alt_path in "${alt_emergency_paths[@]}"; do
+                            if [[ -d "$alt_path" && -f "$alt_path/bin/flutter" ]]; then
+                                found_alt_path="$alt_path"
+                                log_info "Found alternative emergency Flutter SDK path: $found_alt_path"
+                                break
+                            fi
+                        done
+                        
+                        if [[ -n "$found_alt_path" ]]; then
+                            if echo "flutter.sdk=$found_alt_path" >> "$local_props"; then
+                                log_success "Added alternative emergency flutter.sdk path: $found_alt_path"
+                            else
+                                log_error "Failed to add alternative emergency flutter.sdk path"
+                            fi
+                        else
+                            log_error "No emergency Flutter SDK paths accessible"
+                        fi
+                    fi
                 fi
-            else
-                log_warning "Emergency Flutter SDK path not accessible: $emergency_flutter_path"
-            fi
-        fi
     else
         log_error "local.properties file was not created successfully"
         log_error "Attempting emergency fallback creation..."
