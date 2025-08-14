@@ -914,6 +914,16 @@ create_android_config() {
         
         # Create local.properties with detected or default SDK path
         if [[ -n "$sdk_path" ]]; then
+            # Get Flutter SDK path
+            local flutter_sdk_path=""
+            if command -v flutter >/dev/null 2>&1; then
+                flutter_sdk_path=$(flutter --version --machine | grep -o '"flutterRoot":"[^"]*"' | cut -d'"' -f4)
+                if [[ -z "$flutter_sdk_path" ]]; then
+                    # Fallback: try to get Flutter path from which command
+                    flutter_sdk_path=$(dirname "$(dirname "$(which flutter)")")
+                fi
+            fi
+            
             cat > "$local_props" << EOF
 ## This file must *NOT* be checked into Version Control Systems,
 ## as it contains information specific to your local configuration.
@@ -923,7 +933,15 @@ create_android_config() {
 # header note.
 sdk.dir=$sdk_path
 EOF
-            log_success "Created local.properties with SDK path: $sdk_path"
+            
+            # Add Flutter SDK path if found
+            if [[ -n "$flutter_sdk_path" ]]; then
+                echo "flutter.sdk=$flutter_sdk_path" >> "$local_props"
+                log_success "Created local.properties with SDK path: $sdk_path and Flutter SDK: $flutter_sdk_path"
+            else
+                log_success "Created local.properties with SDK path: $sdk_path"
+                log_warning "Flutter SDK path not found - may cause build issues"
+            fi
         else
             # Create with a placeholder that can be updated later
             cat > "$local_props" << EOF
@@ -934,6 +952,7 @@ EOF
 # For customization when using a Version Control System, please read the
 # header note.
 # sdk.dir=/path/to/your/android/sdk
+# flutter.sdk=/path/to/your/flutter/sdk
 # 
 # Common locations:
 # macOS: $HOME/Library/Android/sdk
@@ -941,7 +960,7 @@ EOF
 # Windows: %LOCALAPPDATA%\\Android\\Sdk
 EOF
             log_warning "Created local.properties with placeholder SDK path"
-            log_info "You may need to update sdk.dir in $local_props"
+            log_info "You may need to update sdk.dir and flutter.sdk in $local_props"
         fi
     else
         log_info "local.properties already exists"
@@ -1056,6 +1075,47 @@ verify_android_sdk() {
     
     if [[ -n "$ANDROID_SDK_ROOT" ]]; then
         log_info "ANDROID_SDK_ROOT environment variable set: $ANDROID_SDK_ROOT"
+    fi
+    
+    # Verify Flutter SDK path in local.properties
+    if [[ -f "$local_props" ]]; then
+        local flutter_sdk_path=$(grep "^flutter.sdk=" "$local_props" | cut -d'=' -f2 | tr -d '\r')
+        
+        if [[ -n "$flutter_sdk_path" ]]; then
+            log_info "Flutter SDK path from local.properties: $flutter_sdk_path"
+            
+            if [[ -d "$flutter_sdk_path" ]]; then
+                # Check for Flutter SDK components
+                local flutter_bin="$flutter_sdk_path/bin/flutter"
+                local flutter_dart="$flutter_sdk_path/bin/dart"
+                
+                if [[ -f "$flutter_bin" ]]; then
+                    log_success "Flutter binary found at: $flutter_bin"
+                else
+                    log_warning "Flutter binary not found at: $flutter_bin"
+                fi
+                
+                if [[ -f "$flutter_dart" ]]; then
+                    log_success "Dart binary found at: $flutter_dart"
+                else
+                    log_warning "Dart binary not found at: $flutter_dart"
+                fi
+                
+                # Check Flutter version
+                if command -v flutter >/dev/null 2>&1; then
+                    local flutter_version=$(flutter --version | head -1)
+                    log_info "Flutter version: $flutter_version"
+                fi
+                
+            else
+                log_error "Flutter SDK directory not found at: $flutter_sdk_path"
+                log_error "Please check your local.properties file and ensure the flutter.sdk path is correct"
+                return 1
+            fi
+        else
+            log_warning "No Flutter SDK path found in local.properties"
+            log_warning "This may cause build issues - flutter.sdk should be set"
+        fi
     fi
     
     log_success "Android SDK verification completed"
