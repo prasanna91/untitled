@@ -870,6 +870,15 @@ create_android_config() {
     local project_root="$(pwd)"
     local android_dir="$project_root/android"
     
+    log_info "Project root: $project_root"
+    log_info "Android directory: $android_dir"
+    
+    # Ensure android directory exists
+    if [[ ! -d "$android_dir" ]]; then
+        log_error "Android directory does not exist: $android_dir"
+        return 1
+    fi
+    
     # Create local.properties if it doesn't exist
     local local_props="$android_dir/local.properties"
     if [[ ! -f "$local_props" ]]; then
@@ -914,17 +923,37 @@ create_android_config() {
         
         # Create local.properties with detected or default SDK path
         if [[ -n "$sdk_path" ]]; then
+            log_info "SDK path detected: $sdk_path"
+            
             # Get Flutter SDK path
             local flutter_sdk_path=""
+            log_info "Attempting to detect Flutter SDK path..."
+            
             if command -v flutter >/dev/null 2>&1; then
-                flutter_sdk_path=$(flutter --version --machine | grep -o '"flutterRoot":"[^"]*"' | cut -d'"' -f4)
-                if [[ -z "$flutter_sdk_path" ]]; then
-                    # Fallback: try to get Flutter path from which command
-                    flutter_sdk_path=$(dirname "$(dirname "$(which flutter)")")
+                log_info "Flutter command found, getting version info..."
+                local flutter_version_output=$(flutter --version --machine 2>/dev/null || echo "")
+                
+                if [[ -n "$flutter_version_output" ]]; then
+                    flutter_sdk_path=$(echo "$flutter_version_output" | grep -o '"flutterRoot":"[^"]*"' | cut -d'"' -f4)
+                    log_info "Flutter SDK path from version command: $flutter_sdk_path"
                 fi
+                
+                if [[ -z "$flutter_sdk_path" ]]; then
+                    log_info "Trying fallback method to get Flutter path..."
+                    local flutter_which=$(which flutter 2>/dev/null || echo "")
+                    if [[ -n "$flutter_which" ]]; then
+                        flutter_sdk_path=$(dirname "$(dirname "$flutter_which")")
+                        log_info "Flutter SDK path from which command: $flutter_sdk_path"
+                    fi
+                fi
+            else
+                log_warning "Flutter command not found in PATH"
             fi
             
-            cat > "$local_props" << EOF
+            log_info "Creating local.properties file at: $local_props"
+            
+            # Create the file with error handling
+            if cat > "$local_props" << EOF
 ## This file must *NOT* be checked into Version Control Systems,
 ## as it contains information specific to your local configuration.
 #
@@ -933,14 +962,36 @@ create_android_config() {
 # header note.
 sdk.dir=$sdk_path
 EOF
-            
-            # Add Flutter SDK path if found
-            if [[ -n "$flutter_sdk_path" ]]; then
-                echo "flutter.sdk=$flutter_sdk_path" >> "$local_props"
-                log_success "Created local.properties with SDK path: $sdk_path and Flutter SDK: $flutter_sdk_path"
-            else
+            then
                 log_success "Created local.properties with SDK path: $sdk_path"
-                log_warning "Flutter SDK path not found - may cause build issues"
+                
+                # Add Flutter SDK path if found
+                if [[ -n "$flutter_sdk_path" ]]; then
+                    if echo "flutter.sdk=$flutter_sdk_path" >> "$local_props"; then
+                        log_success "Added Flutter SDK path: $flutter_sdk_path"
+                        log_success "Created local.properties with SDK path: $sdk_path and Flutter SDK: $flutter_sdk_path"
+                    else
+                        log_error "Failed to add Flutter SDK path to local.properties"
+                        return 1
+                    fi
+                else
+                    log_success "Created local.properties with SDK path: $sdk_path"
+                    log_warning "Flutter SDK path not found - may cause build issues"
+                fi
+                
+                # Verify the file was created successfully
+                if [[ -f "$local_props" ]]; then
+                    log_info "local.properties file created successfully:"
+                    cat "$local_props" | while read -r line; do
+                        log_info "  $line"
+                    done
+                else
+                    log_error "local.properties file was not created"
+                    return 1
+                fi
+            else
+                log_error "Failed to create local.properties file"
+                return 1
             fi
         else
             # Create with a placeholder that can be updated later
@@ -1005,6 +1056,35 @@ EOF
         log_success "Created gradle.properties with default settings"
     else
         log_info "gradle.properties already exists"
+    fi
+    
+    # Final verification that local.properties exists and is readable
+    if [[ -f "$local_props" ]]; then
+        log_info "Final verification of local.properties:"
+        log_info "File exists: $local_props"
+        log_info "File size: $(wc -c < "$local_props") bytes"
+        log_info "File permissions: $(ls -la "$local_props" | awk '{print $1}')"
+        log_info "File contents:"
+        cat "$local_props" | while read -r line; do
+            log_info "  $line"
+        done
+    else
+        log_error "local.properties file was not created successfully"
+        log_error "Attempting emergency fallback creation..."
+        
+        # Emergency fallback: create a minimal local.properties
+        if cat > "$local_props" << EOF
+# Emergency fallback local.properties
+sdk.dir=/usr/local/share/android-sdk
+flutter.sdk=/usr/local/flutter
+EOF
+        then
+            log_warning "Emergency fallback local.properties created"
+            log_info "This may need manual adjustment for your environment"
+        else
+            log_error "Failed to create emergency fallback local.properties"
+            return 1
+        fi
     fi
 }
 
