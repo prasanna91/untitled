@@ -32,6 +32,18 @@ verify_android_project() {
         return 1
     fi
     
+    # Check for required Android configuration files
+    local local_props="$android_dir/local.properties"
+    local gradle_props="$android_dir/gradle.properties"
+    
+    if [[ ! -f "$local_props" ]]; then
+        log_warning "local.properties not found - will be created during setup"
+    fi
+    
+    if [[ ! -f "$gradle_props" ]]; then
+        log_warning "gradle.properties not found - will be created during setup"
+    fi
+    
     # Check if gradlew exists, if not try to generate it
     if [[ ! -f "$gradlew" ]]; then
         log_warning "Gradle wrapper not found at $gradlew"
@@ -851,6 +863,204 @@ EOF
     fi
 }
 
+# Function to create missing Android configuration files
+create_android_config() {
+    log_step "Creating missing Android configuration files"
+    
+    local project_root="$(pwd)"
+    local android_dir="$project_root/android"
+    
+    # Create local.properties if it doesn't exist
+    local local_props="$android_dir/local.properties"
+    if [[ ! -f "$local_props" ]]; then
+        log_info "Creating local.properties file..."
+        
+        # Try to detect Android SDK location
+        local sdk_path=""
+        
+        # Check common Android SDK locations
+        if [[ -n "$ANDROID_HOME" ]]; then
+            sdk_path="$ANDROID_HOME"
+            log_info "Using ANDROID_HOME: $sdk_path"
+        elif [[ -n "$ANDROID_SDK_ROOT" ]]; then
+            sdk_path="$ANDROID_SDK_ROOT"
+            log_info "Using ANDROID_SDK_ROOT: $sdk_path"
+        elif [[ -d "$HOME/Library/Android/sdk" ]]; then
+            sdk_path="$HOME/Library/Android/sdk"
+            log_info "Using macOS default SDK path: $sdk_path"
+        elif [[ -d "$HOME/Android/Sdk" ]]; then
+            sdk_path="$HOME/Android/Sdk"
+            log_info "Using Linux default SDK path: $sdk_path"
+        elif [[ -d "$LOCALAPPDATA/Android/Sdk" ]]; then
+            sdk_path="$LOCALAPPDATA/Android/Sdk"
+            log_info "Using Windows default SDK path: $sdk_path"
+        else
+            # Try to find SDK in common locations
+            local possible_paths=(
+                "/usr/local/android-sdk"
+                "/opt/android-sdk"
+                "/usr/lib/android-sdk"
+                "/opt/android-sdk-linux"
+            )
+            
+            for path in "${possible_paths[@]}"; do
+                if [[ -d "$path" ]]; then
+                    sdk_path="$path"
+                    log_info "Found SDK in common location: $sdk_path"
+                    break
+                fi
+            done
+        fi
+        
+        # Create local.properties with detected or default SDK path
+        if [[ -n "$sdk_path" ]]; then
+            cat > "$local_props" << EOF
+## This file must *NOT* be checked into Version Control Systems,
+## as it contains information specific to your local configuration.
+#
+# Location of the SDK. This is only used by Gradle.
+# For customization when using a Version Control System, please read the
+# header note.
+sdk.dir=$sdk_path
+EOF
+            log_success "Created local.properties with SDK path: $sdk_path"
+        else
+            # Create with a placeholder that can be updated later
+            cat > "$local_props" << EOF
+## This file must *NOT* be checked into Version Control Systems,
+## as it contains information specific to your local configuration.
+#
+# Location of the SDK. This is only used by Gradle.
+# For customization when using a Version Control System, please read the
+# header note.
+# sdk.dir=/path/to/your/android/sdk
+# 
+# Common locations:
+# macOS: $HOME/Library/Android/sdk
+# Linux: $HOME/Android/Sdk
+# Windows: %LOCALAPPDATA%\\Android\\Sdk
+EOF
+            log_warning "Created local.properties with placeholder SDK path"
+            log_info "You may need to update sdk.dir in $local_props"
+        fi
+    else
+        log_info "local.properties already exists"
+    fi
+    
+    # Create gradle.properties if it doesn't exist
+    local gradle_props="$android_dir/gradle.properties"
+    if [[ ! -f "$gradle_props" ]]; then
+        log_info "Creating gradle.properties file..."
+        cat > "$gradle_props" << EOF
+# Project-wide Gradle settings.
+#
+# IDE (e.g. Android Studio) users:
+# Gradle settings configured through the IDE *will override*
+# any settings specified in this file.
+#
+# For more details on how to configure your build environment visit
+# http://www.gradle.org/docs/current/userguide/build_environment.html
+
+# Specifies the JVM arguments used for the daemon process.
+# The setting is particularly useful for tweaking memory settings.
+org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+
+# When configured, Gradle will run in incubating parallel mode.
+# This option should only be used with decoupled projects. More details, visit
+# http://www.gradle.org/docs/current/userguide/multi_project_builds.html#sec:decoupled_projects
+org.gradle.parallel=true
+
+# AndroidX package structure to make it clearer which packages are bundled with the
+# Android operating system, and which are packaged with your app's APK
+# https://developer.android.com/topic/libraries/support-library/androidx-rn
+android.useAndroidX=true
+
+# Automatically convert third-party libraries to use AndroidX
+android.enableJetifier=true
+
+# Enables namespacing of each library's R class so that its R class includes only the
+# resources declared in the library itself and none from the library's dependencies,
+# thereby reducing the size of the R class for that library
+android.nonTransitiveRClass=true
+EOF
+        log_success "Created gradle.properties with default settings"
+    else
+        log_info "gradle.properties already exists"
+    fi
+}
+
+# Function to verify Android SDK accessibility
+verify_android_sdk() {
+    log_step "Verifying Android SDK accessibility"
+    
+    local project_root="$(pwd)"
+    local android_dir="$project_root/android"
+    local local_props="$android_dir/local.properties"
+    
+    if [[ -f "$local_props" ]]; then
+        # Extract SDK path from local.properties
+        local sdk_path=$(grep "^sdk.dir=" "$local_props" | cut -d'=' -f2 | tr -d '\r')
+        
+        if [[ -n "$sdk_path" && "$sdk_path" != "#"* ]]; then
+            log_info "Android SDK path from local.properties: $sdk_path"
+            
+            # Check if SDK directory exists and contains required components
+            if [[ -d "$sdk_path" ]]; then
+                local sdk_platforms="$sdk_path/platforms"
+                local sdk_build_tools="$sdk_path/build-tools"
+                
+                if [[ -d "$sdk_platforms" ]]; then
+                    log_success "Android SDK platforms directory found"
+                else
+                    log_warning "Android SDK platforms directory not found at $sdk_platforms"
+                fi
+                
+                if [[ -d "$sdk_build_tools" ]]; then
+                    log_success "Android SDK build-tools directory found"
+                else
+                    log_warning "Android SDK build-tools directory not found at $sdk_build_tools"
+                fi
+                
+                # Check for at least one platform version
+                local platform_count=$(find "$sdk_platforms" -maxdepth 1 -type d -name "android-*" 2>/dev/null | wc -l)
+                if [[ $platform_count -gt 0 ]]; then
+                    log_success "Found $platform_count Android platform(s)"
+                else
+                    log_warning "No Android platforms found in SDK"
+                fi
+                
+                # Check for at least one build-tools version
+                local build_tools_count=$(find "$sdk_build_tools" -maxdepth 1 -type d -name "*.*.*" 2>/dev/null | wc -l)
+                if [[ $build_tools_count -gt 0 ]]; then
+                    log_success "Found $build_tools_count build-tools version(s)"
+                else
+                    log_warning "No build-tools versions found in SDK"
+                fi
+                
+            else
+                log_error "Android SDK directory not found at: $sdk_path"
+                log_error "Please check your local.properties file and ensure the SDK path is correct"
+                return 1
+            fi
+        else
+            log_warning "No valid SDK path found in local.properties"
+        fi
+    else
+        log_warning "local.properties not found - cannot verify SDK path"
+    fi
+    
+    # Check environment variables as fallback
+    if [[ -n "$ANDROID_HOME" ]]; then
+        log_info "ANDROID_HOME environment variable set: $ANDROID_HOME"
+    fi
+    
+    if [[ -n "$ANDROID_SDK_ROOT" ]]; then
+        log_info "ANDROID_SDK_ROOT environment variable set: $ANDROID_SDK_ROOT"
+    fi
+    
+    log_success "Android SDK verification completed"
+}
+
 # Main build function
 main() {
     log_info "Starting Android build process"
@@ -891,6 +1101,12 @@ main() {
     
     # Create missing Android resource files if they don't exist
     create_android_resources
+    
+    # Create missing Android configuration files
+    create_android_config
+    
+    # Verify Android SDK accessibility
+    verify_android_sdk
     
     # Clean previous builds
     clean_builds
