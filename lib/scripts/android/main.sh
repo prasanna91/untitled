@@ -863,6 +863,22 @@ EOF
     fi
 }
 
+# Function to safely execute commands with timeout
+safe_execute() {
+    local timeout_seconds="$1"
+    local command="$2"
+    local description="$3"
+    
+    log_info "Executing: $description (timeout: ${timeout_seconds}s)"
+    
+    if timeout "${timeout_seconds}s" bash -c "$command" 2>/dev/null; then
+        return 0
+    else
+        log_warning "$description failed or timed out after ${timeout_seconds}s"
+        return 1
+    fi
+}
+
 # Function to create missing Android configuration files
 create_android_config() {
     log_step "Creating missing Android configuration files"
@@ -930,24 +946,64 @@ create_android_config() {
             log_info "Attempting to detect Flutter SDK path..."
             
             if command -v flutter >/dev/null 2>&1; then
-                log_info "Flutter command found, getting version info..."
-                local flutter_version_output=$(flutter --version --machine 2>/dev/null || echo "")
+                log_info "Flutter command found, trying simple path detection..."
                 
-                if [[ -n "$flutter_version_output" ]]; then
-                    flutter_sdk_path=$(echo "$flutter_version_output" | grep -o '"flutterRoot":"[^"]*"' | cut -d'"' -f4)
-                    log_info "Flutter SDK path from version command: $flutter_sdk_path"
+                # Try simple which command first (more reliable)
+                local flutter_which=""
+                if timeout 10s which flutter >/dev/null 2>&1; then
+                    flutter_which=$(timeout 10s which flutter 2>/dev/null || echo "")
                 fi
                 
+                if [[ -n "$flutter_which" ]]; then
+                    flutter_sdk_path=$(dirname "$(dirname "$flutter_which")")
+                    log_info "Flutter SDK path from which command: $flutter_sdk_path"
+                    
+                    # Verify the path exists
+                    if [[ -d "$flutter_sdk_path" ]]; then
+                        log_success "Flutter SDK path verified: $flutter_sdk_path"
+                    else
+                        log_warning "Flutter SDK path not accessible: $flutter_sdk_path"
+                        flutter_sdk_path=""
+                    fi
+                fi
+                
+                # Fallback: try version command only if which method failed
                 if [[ -z "$flutter_sdk_path" ]]; then
-                    log_info "Trying fallback method to get Flutter path..."
-                    local flutter_which=$(which flutter 2>/dev/null || echo "")
-                    if [[ -n "$flutter_which" ]]; then
-                        flutter_sdk_path=$(dirname "$(dirname "$flutter_which")")
-                        log_info "Flutter SDK path from which command: $flutter_sdk_path"
+                    log_info "Trying Flutter version command as fallback..."
+                    if timeout 15s flutter --version >/dev/null 2>&1; then
+                        # Use a simpler approach - just get the directory from which
+                        flutter_sdk_path=$(dirname "$(dirname "$(which flutter)")")
+                        log_info "Flutter SDK path from fallback method: $flutter_sdk_path"
+                    else
+                        log_warning "Flutter version command failed or timed out"
                     fi
                 fi
             else
                 log_warning "Flutter command not found in PATH"
+            fi
+            
+            # Final fallback: try common Flutter SDK locations
+            if [[ -z "$flutter_sdk_path" ]]; then
+                log_info "Trying common Flutter SDK locations as final fallback..."
+                local common_flutter_paths=(
+                    "/usr/local/flutter"
+                    "/opt/flutter"
+                    "$HOME/flutter"
+                    "/usr/lib/flutter"
+                    "/opt/flutter-linux"
+                )
+                
+                for path in "${common_flutter_paths[@]}"; do
+                    if [[ -d "$path" && -f "$path/bin/flutter" ]]; then
+                        flutter_sdk_path="$path"
+                        log_success "Found Flutter SDK in common location: $flutter_sdk_path"
+                        break
+                    fi
+                done
+                
+                if [[ -z "$flutter_sdk_path" ]]; then
+                    log_warning "No Flutter SDK found in common locations"
+                fi
             fi
             
             log_info "Creating local.properties file at: $local_props"
